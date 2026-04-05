@@ -1,0 +1,461 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<thing:thing-descriptions bindingId="withings"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
+	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
+
+	<!-- ==================== Bridge: Withings API Account ==================== -->
+	<bridge-type id="account">
+		<label>Withings Account</label>
+		<description>Connection to the Withings Cloud API using OAuth2 authentication. Requires a Withings developer
+			application.</description>
+
+		<config-description>
+			<parameter name="clientId" type="text" required="true">
+				<label>Client ID</label>
+				<description>OAuth2 Client ID from your Withings developer application.</description>
+			</parameter>
+			<parameter name="clientSecret" type="text" required="true">
+				<label>Client Secret</label>
+				<description>OAuth2 Client Secret from your Withings developer application.</description>
+				<context>password</context>
+			</parameter>
+			<parameter name="redirectUri" type="text" required="true">
+				<label>Redirect URI</label>
+				<description>OAuth2 callback URL registered in your Withings developer application (e.g. https://your-openhab.example.com/callback).</description>
+			</parameter>
+			<parameter name="accessToken" type="text" required="false">
+				<label>Access Token</label>
+				<description>OAuth2 access token. Leave empty to authorize via the /withings web page. Will be refreshed
+					automatically.</description>
+				<context>password</context>
+			</parameter>
+			<parameter name="refreshToken" type="text" required="false">
+				<label>Refresh Token</label>
+				<description>OAuth2 refresh token. Leave empty to authorize via the /withings web page.</description>
+				<context>password</context>
+			</parameter>
+		</config-description>
+	</bridge-type>
+
+	<!-- ==================== Thing: Person ==================== -->
+	<thing-type id="person">
+		<supported-bridge-type-refs>
+			<bridge-type-ref id="account"/>
+		</supported-bridge-type-refs>
+
+		<label>Withings Person</label>
+		<description>A person tracked by Withings health devices. Provides body measurements, cardiovascular data, activity
+			metrics, and sleep analysis.</description>
+
+		<channel-groups>
+			<channel-group id="body" typeId="body-measurements"/>
+			<channel-group id="cardiovascular" typeId="cardiovascular-measurements"/>
+			<channel-group id="activity" typeId="activity-measurements"/>
+			<channel-group id="sleep" typeId="sleep-measurements"/>
+		</channel-groups>
+
+		<config-description>
+			<parameter name="userId" type="integer" required="true">
+				<label>User ID</label>
+				<description>Withings user ID. Found in the token response after OAuth2 authorization.</description>
+			</parameter>
+			<parameter name="pollingIntervalBody" type="integer" required="false">
+				<label>Body Polling Interval (min)</label>
+				<description>Interval in minutes to poll for new body measurements (weight, fat, etc.).</description>
+				<default>15</default>
+			</parameter>
+			<parameter name="pollingIntervalActivity" type="integer" required="false">
+				<label>Activity Polling Interval (min)</label>
+				<description>Interval in minutes to poll for new activity data (steps, distance, etc.).</description>
+				<default>30</default>
+			</parameter>
+			<parameter name="pollingIntervalSleep" type="integer" required="false">
+				<label>Sleep Polling Interval (min)</label>
+				<description>Interval in minutes to poll for new sleep data.</description>
+				<default>60</default>
+			</parameter>
+		</config-description>
+	</thing-type>
+
+	<!-- ==================== Channel Group: Body Measurements ==================== -->
+	<channel-group-type id="body-measurements">
+		<label>Body Measurements</label>
+		<description>Body composition data from Withings scales</description>
+		<channels>
+			<channel id="weight" typeId="weight"/>
+			<channel id="fatRatio" typeId="fat-ratio"/>
+			<channel id="fatMass" typeId="fat-mass"/>
+			<channel id="fatFreeMass" typeId="fat-free-mass"/>
+			<channel id="muscleMass" typeId="muscle-mass"/>
+			<channel id="hydration" typeId="hydration"/>
+			<channel id="boneMass" typeId="bone-mass"/>
+			<channel id="lastMeasurement" typeId="last-measurement"/>
+		</channels>
+	</channel-group-type>
+
+	<!-- ==================== Channel Group: Cardiovascular ==================== -->
+	<channel-group-type id="cardiovascular-measurements">
+		<label>Cardiovascular</label>
+		<description>Heart and cardiovascular data from Withings devices</description>
+		<channels>
+			<channel id="heartPulse" typeId="heart-pulse"/>
+			<channel id="systolicBP" typeId="systolic-bp"/>
+			<channel id="diastolicBP" typeId="diastolic-bp"/>
+			<channel id="pulseWaveVelocity" typeId="pulse-wave-velocity"/>
+			<channel id="vo2Max" typeId="vo2-max"/>
+			<channel id="vascularAge" typeId="vascular-age"/>
+			<channel id="spo2" typeId="spo2"/>
+			<channel id="temperature" typeId="body-temperature"/>
+		</channels>
+	</channel-group-type>
+
+	<!-- ==================== Channel Group: Activity ==================== -->
+	<channel-group-type id="activity-measurements">
+		<label>Activity</label>
+		<description>Daily activity data from Withings watches and trackers</description>
+		<channels>
+			<channel id="steps" typeId="steps"/>
+			<channel id="distance" typeId="distance"/>
+			<channel id="calories" typeId="calories"/>
+			<channel id="totalCalories" typeId="total-calories"/>
+			<channel id="elevation" typeId="elevation"/>
+			<channel id="softActivity" typeId="soft-activity"/>
+			<channel id="moderateActivity" typeId="moderate-activity"/>
+			<channel id="intenseActivity" typeId="intense-activity"/>
+			<channel id="hrAverage" typeId="hr-average"/>
+			<channel id="hrMin" typeId="hr-min"/>
+			<channel id="hrMax" typeId="hr-max"/>
+		</channels>
+	</channel-group-type>
+
+	<!-- ==================== Channel Group: Sleep ==================== -->
+	<channel-group-type id="sleep-measurements">
+		<label>Sleep</label>
+		<description>Sleep tracking data from Withings sleep monitors and watches</description>
+		<channels>
+			<channel id="totalSleepTime" typeId="total-sleep-time"/>
+			<channel id="deepSleepDuration" typeId="deep-sleep-duration"/>
+			<channel id="lightSleepDuration" typeId="light-sleep-duration"/>
+			<channel id="remSleepDuration" typeId="rem-sleep-duration"/>
+			<channel id="wakeupCount" typeId="wakeup-count"/>
+			<channel id="wakeupDuration" typeId="wakeup-duration"/>
+			<channel id="timeToSleep" typeId="time-to-sleep"/>
+			<channel id="timeToWakeup" typeId="time-to-wakeup"/>
+			<channel id="sleepScore" typeId="sleep-score"/>
+			<channel id="snoring" typeId="snoring"/>
+			<channel id="sleepHrAverage" typeId="sleep-hr-average"/>
+			<channel id="sleepHrMin" typeId="sleep-hr-min"/>
+			<channel id="sleepHrMax" typeId="sleep-hr-max"/>
+			<channel id="sleepRrAverage" typeId="sleep-rr-average"/>
+			<channel id="sleepRrMin" typeId="sleep-rr-min"/>
+			<channel id="sleepRrMax" typeId="sleep-rr-max"/>
+		</channels>
+	</channel-group-type>
+
+	<!-- ==================== Channel Types: Body ==================== -->
+	<channel-type id="weight">
+		<item-type>Number:Mass</item-type>
+		<label>Weight</label>
+		<description>Body weight measurement</description>
+		<state readOnly="true" pattern="%.1f %unit%"/>
+	</channel-type>
+
+	<channel-type id="fat-ratio">
+		<item-type>Number</item-type>
+		<label>Fat Ratio</label>
+		<description>Body fat percentage</description>
+		<state readOnly="true" pattern="%.1f %%"/>
+	</channel-type>
+
+	<channel-type id="fat-mass">
+		<item-type>Number:Mass</item-type>
+		<label>Fat Mass</label>
+		<description>Fat mass weight</description>
+		<state readOnly="true" pattern="%.1f %unit%"/>
+	</channel-type>
+
+	<channel-type id="fat-free-mass">
+		<item-type>Number:Mass</item-type>
+		<label>Fat Free Mass</label>
+		<description>Fat-free mass (lean body mass)</description>
+		<state readOnly="true" pattern="%.1f %unit%"/>
+	</channel-type>
+
+	<channel-type id="muscle-mass">
+		<item-type>Number:Mass</item-type>
+		<label>Muscle Mass</label>
+		<description>Muscle mass weight</description>
+		<state readOnly="true" pattern="%.1f %unit%"/>
+	</channel-type>
+
+	<channel-type id="hydration">
+		<item-type>Number:Mass</item-type>
+		<label>Hydration</label>
+		<description>Body hydration mass</description>
+		<state readOnly="true" pattern="%.1f %unit%"/>
+	</channel-type>
+
+	<channel-type id="bone-mass">
+		<item-type>Number:Mass</item-type>
+		<label>Bone Mass</label>
+		<description>Bone mass weight</description>
+		<state readOnly="true" pattern="%.2f %unit%"/>
+	</channel-type>
+
+	<channel-type id="last-measurement">
+		<item-type>DateTime</item-type>
+		<label>Last Measurement</label>
+		<description>Timestamp of the last body measurement</description>
+		<state readOnly="true"/>
+	</channel-type>
+
+	<!-- ==================== Channel Types: Cardiovascular ==================== -->
+	<channel-type id="heart-pulse">
+		<item-type>Number</item-type>
+		<label>Heart Pulse</label>
+		<description>Heart rate in beats per minute</description>
+		<state readOnly="true" pattern="%d bpm"/>
+	</channel-type>
+
+	<channel-type id="systolic-bp">
+		<item-type>Number:Pressure</item-type>
+		<label>Systolic Blood Pressure</label>
+		<description>Systolic blood pressure</description>
+		<state readOnly="true" pattern="%d %unit%"/>
+	</channel-type>
+
+	<channel-type id="diastolic-bp">
+		<item-type>Number:Pressure</item-type>
+		<label>Diastolic Blood Pressure</label>
+		<description>Diastolic blood pressure</description>
+		<state readOnly="true" pattern="%d %unit%"/>
+	</channel-type>
+
+	<channel-type id="pulse-wave-velocity">
+		<item-type>Number</item-type>
+		<label>Pulse Wave Velocity</label>
+		<description>Pulse wave velocity in m/s</description>
+		<state readOnly="true" pattern="%.1f m/s"/>
+	</channel-type>
+
+	<channel-type id="vo2-max">
+		<item-type>Number</item-type>
+		<label>VO2 Max</label>
+		<description>Maximum oxygen consumption (ml/min/kg)</description>
+		<state readOnly="true" pattern="%.1f ml/min/kg"/>
+	</channel-type>
+
+	<channel-type id="vascular-age">
+		<item-type>Number</item-type>
+		<label>Vascular Age</label>
+		<description>Estimated vascular age</description>
+		<state readOnly="true" pattern="%d"/>
+	</channel-type>
+
+	<channel-type id="spo2">
+		<item-type>Number</item-type>
+		<label>SpO2</label>
+		<description>Blood oxygen saturation percentage</description>
+		<state readOnly="true" pattern="%.1f %%"/>
+	</channel-type>
+
+	<channel-type id="body-temperature">
+		<item-type>Number:Temperature</item-type>
+		<label>Body Temperature</label>
+		<description>Body temperature measurement</description>
+		<state readOnly="true" pattern="%.1f %unit%"/>
+	</channel-type>
+
+	<!-- ==================== Channel Types: Activity ==================== -->
+	<channel-type id="steps">
+		<item-type>Number</item-type>
+		<label>Steps</label>
+		<description>Number of steps taken today</description>
+		<state readOnly="true" pattern="%d"/>
+	</channel-type>
+
+	<channel-type id="distance">
+		<item-type>Number:Length</item-type>
+		<label>Distance</label>
+		<description>Distance travelled today</description>
+		<state readOnly="true" pattern="%.0f %unit%"/>
+	</channel-type>
+
+	<channel-type id="calories">
+		<item-type>Number:Energy</item-type>
+		<label>Active Calories</label>
+		<description>Active calories burned today</description>
+		<state readOnly="true" pattern="%.0f %unit%"/>
+	</channel-type>
+
+	<channel-type id="total-calories">
+		<item-type>Number:Energy</item-type>
+		<label>Total Calories</label>
+		<description>Total calories burned today (active + passive)</description>
+		<state readOnly="true" pattern="%.0f %unit%"/>
+	</channel-type>
+
+	<channel-type id="elevation">
+		<item-type>Number</item-type>
+		<label>Floors Climbed</label>
+		<description>Number of floors climbed today</description>
+		<state readOnly="true" pattern="%d"/>
+	</channel-type>
+
+	<channel-type id="soft-activity">
+		<item-type>Number:Time</item-type>
+		<label>Soft Activity</label>
+		<description>Duration of soft (light) activities</description>
+		<state readOnly="true" pattern="%.0f %unit%"/>
+	</channel-type>
+
+	<channel-type id="moderate-activity">
+		<item-type>Number:Time</item-type>
+		<label>Moderate Activity</label>
+		<description>Duration of moderate activities</description>
+		<state readOnly="true" pattern="%.0f %unit%"/>
+	</channel-type>
+
+	<channel-type id="intense-activity">
+		<item-type>Number:Time</item-type>
+		<label>Intense Activity</label>
+		<description>Duration of intense activities</description>
+		<state readOnly="true" pattern="%.0f %unit%"/>
+	</channel-type>
+
+	<channel-type id="hr-average">
+		<item-type>Number</item-type>
+		<label>Average Heart Rate</label>
+		<description>Average heart rate during the day</description>
+		<state readOnly="true" pattern="%d bpm"/>
+	</channel-type>
+
+	<channel-type id="hr-min">
+		<item-type>Number</item-type>
+		<label>Min Heart Rate</label>
+		<description>Minimum heart rate during the day</description>
+		<state readOnly="true" pattern="%d bpm"/>
+	</channel-type>
+
+	<channel-type id="hr-max">
+		<item-type>Number</item-type>
+		<label>Max Heart Rate</label>
+		<description>Maximum heart rate during the day</description>
+		<state readOnly="true" pattern="%d bpm"/>
+	</channel-type>
+
+	<!-- ==================== Channel Types: Sleep ==================== -->
+	<channel-type id="total-sleep-time">
+		<item-type>Number:Time</item-type>
+		<label>Total Sleep Time</label>
+		<description>Total time spent asleep</description>
+		<state readOnly="true" pattern="%.0f %unit%"/>
+	</channel-type>
+
+	<channel-type id="deep-sleep-duration">
+		<item-type>Number:Time</item-type>
+		<label>Deep Sleep</label>
+		<description>Duration of deep sleep</description>
+		<state readOnly="true" pattern="%.0f %unit%"/>
+	</channel-type>
+
+	<channel-type id="light-sleep-duration">
+		<item-type>Number:Time</item-type>
+		<label>Light Sleep</label>
+		<description>Duration of light sleep</description>
+		<state readOnly="true" pattern="%.0f %unit%"/>
+	</channel-type>
+
+	<channel-type id="rem-sleep-duration">
+		<item-type>Number:Time</item-type>
+		<label>REM Sleep</label>
+		<description>Duration of REM sleep</description>
+		<state readOnly="true" pattern="%.0f %unit%"/>
+	</channel-type>
+
+	<channel-type id="wakeup-count">
+		<item-type>Number</item-type>
+		<label>Wakeup Count</label>
+		<description>Number of times woken up during the night</description>
+		<state readOnly="true" pattern="%d"/>
+	</channel-type>
+
+	<channel-type id="wakeup-duration">
+		<item-type>Number:Time</item-type>
+		<label>Wakeup Duration</label>
+		<description>Total time spent awake during the night</description>
+		<state readOnly="true" pattern="%.0f %unit%"/>
+	</channel-type>
+
+	<channel-type id="time-to-sleep">
+		<item-type>Number:Time</item-type>
+		<label>Time to Sleep</label>
+		<description>Time spent in bed before falling asleep</description>
+		<state readOnly="true" pattern="%.0f %unit%"/>
+	</channel-type>
+
+	<channel-type id="time-to-wakeup">
+		<item-type>Number:Time</item-type>
+		<label>Time to Wakeup</label>
+		<description>Time spent in bed after waking up</description>
+		<state readOnly="true" pattern="%.0f %unit%"/>
+	</channel-type>
+
+	<channel-type id="sleep-score">
+		<item-type>Number</item-type>
+		<label>Sleep Score</label>
+		<description>Overall sleep quality score (0-100)</description>
+		<state readOnly="true" pattern="%d"/>
+	</channel-type>
+
+	<channel-type id="snoring">
+		<item-type>Number:Time</item-type>
+		<label>Snoring Duration</label>
+		<description>Total snoring time during sleep</description>
+		<state readOnly="true" pattern="%.0f %unit%"/>
+	</channel-type>
+
+	<channel-type id="sleep-hr-average">
+		<item-type>Number</item-type>
+		<label>Sleep Avg Heart Rate</label>
+		<description>Average heart rate during sleep</description>
+		<state readOnly="true" pattern="%d bpm"/>
+	</channel-type>
+
+	<channel-type id="sleep-hr-min">
+		<item-type>Number</item-type>
+		<label>Sleep Min Heart Rate</label>
+		<description>Minimum heart rate during sleep</description>
+		<state readOnly="true" pattern="%d bpm"/>
+	</channel-type>
+
+	<channel-type id="sleep-hr-max">
+		<item-type>Number</item-type>
+		<label>Sleep Max Heart Rate</label>
+		<description>Maximum heart rate during sleep</description>
+		<state readOnly="true" pattern="%d bpm"/>
+	</channel-type>
+
+	<channel-type id="sleep-rr-average">
+		<item-type>Number</item-type>
+		<label>Sleep Avg Respiration Rate</label>
+		<description>Average respiration rate during sleep</description>
+		<state readOnly="true" pattern="%d brpm"/>
+	</channel-type>
+
+	<channel-type id="sleep-rr-min">
+		<item-type>Number</item-type>
+		<label>Sleep Min Respiration Rate</label>
+		<description>Minimum respiration rate during sleep</description>
+		<state readOnly="true" pattern="%d brpm"/>
+	</channel-type>
+
+	<channel-type id="sleep-rr-max">
+		<item-type>Number</item-type>
+		<label>Sleep Max Respiration Rate</label>
+		<description>Maximum respiration rate during sleep</description>
+		<state readOnly="true" pattern="%d brpm"/>
+	</channel-type>
+
+</thing:thing-descriptions>
