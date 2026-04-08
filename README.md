@@ -158,7 +158,18 @@ The binding supports two authorization methods.
 6. You will be redirected back and the bridge will go `ONLINE`
 7. Note the **User ID** shown on the success page — use it for your person thing configuration
 
-Tokens are persisted in the bridge configuration and refreshed automatically.
+Tokens are persisted in openHAB's JSON database (`StorageService`) and survive reboots — even when the bridge is defined in a `.things` text file. Tokens are refreshed automatically before expiry.
+
+### Token Persistence (Reboot Survival)
+
+The binding uses openHAB's `StorageService` to persist OAuth2 tokens independently of the thing configuration. This is critical because `.things` text files are read-only — `updateConfiguration()` only updates in-memory state and is lost on restart.
+
+**How it works:**
+1. On successful authorization or token refresh → tokens are saved to `/var/lib/openhab/jsondb/withings.tokens.<bridgeUID>.json`
+2. On `initialize()` → tokens are loaded from storage first, falling back to `.things` config values
+3. Each bridge gets its own isolated storage key
+
+This means you only need to authorize once — the binding will automatically reconnect after reboots using the persisted tokens.
 
 ### Pre-Configured Tokens
 
@@ -517,6 +528,7 @@ withings-binding/
 ### Key Design Decisions
 
 - **Manual OAuth2** — Withings uses a non-standard OAuth2 flow (`action=requesttoken` form param instead of standard token endpoint). The binding handles this directly rather than using openHAB's OAuth2 service.
+- **StorageService token persistence** — Tokens are stored in openHAB's JSON database via `StorageService`, not in thing configuration. This ensures tokens survive reboots when using `.things` text file configuration (where `updateConfiguration()` is not persisted to disk).
 - **Servlet-based authorization** — Modeled after the HomeConnect binding. The `WithingsServlet` is an OSGi singleton component registered at `/withings` via `HttpService`. Bridge handlers register/unregister with the servlet for callback routing.
 - **Three polling jobs** — Body measurements, activity, and sleep are polled on separate schedules since they update at different frequencies.
 - **Latest-value-only updates** — When fetching measurements, only the most recent value per measure type is used to avoid "scrolling" through historical data on each poll.
@@ -528,7 +540,11 @@ withings-binding/
 
 ### Bridge goes OFFLINE / CONFIGURATION_PENDING
 
-This is normal when tokens are not configured. Open `http://your-openhab:8080/withings` and authorize.
+This is normal when tokens are not configured and no persisted tokens exist in storage. Open `http://your-openhab:8080/withings` and authorize. After first authorization, tokens are stored persistently and will survive reboots.
+
+### Bridge goes OFFLINE after reboot
+
+If this happens, check that `/var/lib/openhab/jsondb/` contains a `withings.tokens.*.json` file. If missing, re-authorize via the `/withings` page. The binding version must include the `StorageService` persistence fix (April 2026+).
 
 ### Token refresh fails (status 401)
 

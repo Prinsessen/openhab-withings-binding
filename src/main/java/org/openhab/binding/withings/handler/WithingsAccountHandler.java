@@ -15,7 +15,8 @@ package org.openhab.binding.withings.handler;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.withings.servlet.WithingsServlet;
-import org.openhab.core.config.core.Configuration;
+import org.openhab.core.storage.Storage;
+import org.openhab.core.storage.StorageService;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.ThingStatus;
@@ -41,13 +42,20 @@ import org.slf4j.LoggerFactory;
 @NonNullByDefault
 public class WithingsAccountHandler extends BaseBridgeHandler implements WithingsApiClient.TokenRefreshCallback {
 
+    private static final String STORAGE_KEY_ACCESS_TOKEN = "accessToken";
+    private static final String STORAGE_KEY_REFRESH_TOKEN = "refreshToken";
+
     private final Logger logger = LoggerFactory.getLogger(WithingsAccountHandler.class);
     private final WithingsServlet servlet;
+    private final Storage<String> tokenStorage;
     private @Nullable WithingsApiClient apiClient;
 
-    public WithingsAccountHandler(Bridge bridge, WithingsServlet servlet) {
+    public WithingsAccountHandler(Bridge bridge, WithingsServlet servlet, StorageService storageService) {
         super(bridge);
         this.servlet = servlet;
+        // Storage key includes bridge UID so multiple accounts are isolated
+        this.tokenStorage = storageService.getStorage("withings.tokens." + bridge.getUID().getAsString(),
+                String.class.getClassLoader());
     }
 
     @Override
@@ -73,7 +81,17 @@ public class WithingsAccountHandler extends BaseBridgeHandler implements Withing
             return;
         }
 
-        // If tokens are missing, wait for authorization via the servlet
+        // Check persisted storage first (survives reboot), then fall back to .things config
+        String storedAccess = tokenStorage.get(STORAGE_KEY_ACCESS_TOKEN);
+        String storedRefresh = tokenStorage.get(STORAGE_KEY_REFRESH_TOKEN);
+
+        if (storedAccess != null && !storedAccess.isBlank() && storedRefresh != null && !storedRefresh.isBlank()) {
+            logger.info("Restored Withings OAuth2 tokens from persistent storage");
+            accessToken = storedAccess;
+            refreshToken = storedRefresh;
+        }
+
+        // If tokens are missing from both storage and config, wait for authorization via the servlet
         if (accessToken == null || accessToken.isBlank() || refreshToken == null || refreshToken.isBlank()) {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING,
                     "Please authorize your Withings account at http(s)://[YOUR_OPENHAB]/withings");
@@ -146,11 +164,8 @@ public class WithingsAccountHandler extends BaseBridgeHandler implements Withing
     public void handleAuthorizationComplete(String accessToken, String refreshToken) {
         logger.info("Received new OAuth2 tokens via servlet callback, reinitializing bridge");
 
-        // Persist tokens to bridge configuration
-        Configuration config = editConfiguration();
-        config.put("accessToken", accessToken);
-        config.put("refreshToken", refreshToken);
-        updateConfiguration(config);
+        // Persist tokens to persistent storage (survives reboot even with .things file config)
+        persistTokens(accessToken, refreshToken);
 
         // Dispose the old client if any, then reinitialize
         WithingsApiClient client = this.apiClient;
@@ -173,12 +188,19 @@ public class WithingsAccountHandler extends BaseBridgeHandler implements Withing
      */
     @Override
     public void onTokenRefreshed(String newAccessToken, String newRefreshToken) {
-        logger.debug("Persisting refreshed Withings tokens to bridge configuration");
+        logger.debug("Persisting refreshed Withings tokens to persistent storage");
+        persistTokens(newAccessToken, newRefreshToken);
+    }
 
-        Configuration config = editConfiguration();
-        config.put("accessToken", newAccessToken);
-        config.put("refreshToken", newRefreshToken);
-        updateConfiguration(config);
+    /**
+     * Persists OAuth2 tokens to StorageService. This survives reboots even when
+     * the bridge is defined in a .things text file (where updateConfiguration()
+     * only updates in-memory state).
+     */
+    private void persistTokens(String accessToken, String refreshToken) {
+        tokenStorage.put(STORAGE_KEY_ACCESS_TOKEN, accessToken);
+        tokenStorage.put(STORAGE_KEY_REFRESH_TOKEN, refreshToken);
+        logger.debug("Withings tokens persisted to storage for bridge {}", getThing().getUID());
     }
 
     // ===== Config accessors for the servlet =====

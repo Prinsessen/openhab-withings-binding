@@ -19,6 +19,7 @@ import java.util.Set;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.withings.servlet.WithingsServlet;
+import org.openhab.core.storage.StorageService;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingTypeUID;
@@ -41,10 +42,13 @@ public class WithingsHandlerFactory extends BaseThingHandlerFactory {
     private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Set.of(THING_TYPE_ACCOUNT, THING_TYPE_PERSON);
 
     private final WithingsServlet withingsServlet;
+    private final StorageService storageService;
 
     @Activate
-    public WithingsHandlerFactory(@Reference WithingsServlet withingsServlet) {
+    public WithingsHandlerFactory(@Reference WithingsServlet withingsServlet,
+            @Reference StorageService storageService) {
         this.withingsServlet = withingsServlet;
+        this.storageService = storageService;
     }
 
     @Override
@@ -57,7 +61,7 @@ public class WithingsHandlerFactory extends BaseThingHandlerFactory {
         ThingTypeUID thingTypeUID = thing.getThingTypeUID();
 
         if (THING_TYPE_ACCOUNT.equals(thingTypeUID)) {
-            return new WithingsAccountHandler((Bridge) thing, withingsServlet);
+            return new WithingsAccountHandler((Bridge) thing, withingsServlet, storageService);
         } else if (THING_TYPE_PERSON.equals(thingTypeUID)) {
             return new WithingsPersonHandler(thing);
         }
