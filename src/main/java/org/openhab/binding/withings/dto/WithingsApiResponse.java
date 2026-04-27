@@ -108,7 +108,7 @@ public class WithingsApiResponse {
     }
 
     public static class SleepData {
-        public int breathing_disturbances_intensity;
+        public double breathing_disturbances_intensity;
         public int deepsleepduration;
         public int durationtosleep;
         public int durationtowakeup;
@@ -120,9 +120,9 @@ public class WithingsApiResponse {
         public int night_events;
         public int out_of_bed_count;
         public int remsleepduration;
-        public int rr_average;
-        public int rr_max;
-        public int rr_min;
+        public double rr_average;
+        public double rr_max;
+        public double rr_min;
         public double sleep_efficiency;
         public int sleep_latency;
         public int sleep_score;
