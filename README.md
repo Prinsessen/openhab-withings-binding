@@ -35,6 +35,7 @@ A comprehensive openHAB binding for **Withings** health devices — smart scales
 - [Building from Source](#building-from-source)
 - [Architecture](#architecture)
 - [Troubleshooting](#troubleshooting)
+- [Credits](#credits)
 - [License](#license)
 
 ---
@@ -704,6 +705,13 @@ log:set INFO org.openhab.binding.withings    # Return to normal
 ### Withings API rate limits
 
 Avoid polling intervals below 5 minutes. The defaults (15/30/60 min) are well within Withings API rate limits.
+
+---
+
+## Credits
+
+**Author:** Nanna Agesen ([@Prinsessen](https://github.com/Prinsessen))  
+**Email:** Nanna@agesen.dk
 
 ---
 
