@@ -4,7 +4,7 @@
 | type | binding |
 | author | Nanna Agesen |
 | version range | \[5.0.0;6.0.0) |
-| download | [org.openhab.binding.withings-5.2.0-SNAPSHOT.jar](https://github.com/Prinsessen/openhab-withings-binding/releases/download/v1.1.1/org.openhab.binding.withings-5.2.0-SNAPSHOT.jar) |
+| download | [org.openhab.binding.withings-5.2.0-SNAPSHOT.jar](https://github.com/Prinsessen/openhab-withings-binding/releases/download/v1.1.2/org.openhab.binding.withings-5.2.0-SNAPSHOT.jar) |
 
 # Withings Health Binding
 
@@ -179,8 +179,8 @@ rules.when()
 
 ## Resources
 
-* **Download JAR:** [org.openhab.binding.withings-5.2.0-SNAPSHOT.jar](https://github.com/Prinsessen/openhab-withings-binding/releases/download/v1.1.1/org.openhab.binding.withings-5.2.0-SNAPSHOT.jar) (45.9 KB)
+* **Download JAR:** [org.openhab.binding.withings-5.2.0-SNAPSHOT.jar](https://github.com/Prinsessen/openhab-withings-binding/releases/download/v1.1.2/org.openhab.binding.withings-5.2.0-SNAPSHOT.jar) (45.9 KB)
 * **Source Code:** [github.com/Prinsessen/openhab-withings-binding](https://github.com/Prinsessen/openhab-withings-binding)
 * **Full Documentation:** [README.md](https://github.com/Prinsessen/openhab-withings-binding/blob/main/README.md)
-* **Changelog:** [v1.1.1 — Fix sleep data crash](https://github.com/Prinsessen/openhab-withings-binding/releases/tag/v1.1.1)
+* **Changelog:** [v1.1.2 — Defensive float handling for sleep & respiration data](https://github.com/Prinsessen/openhab-withings-binding/releases/tag/v1.1.2)
 * **License:** EPL-2.0
