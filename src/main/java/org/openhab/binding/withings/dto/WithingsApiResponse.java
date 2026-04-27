@@ -123,7 +123,7 @@ public class WithingsApiResponse {
         public int rr_average;
         public int rr_max;
         public int rr_min;
-        public int sleep_efficiency;
+        public double sleep_efficiency;
         public int sleep_latency;
         public int sleep_score;
         public int snoring;
