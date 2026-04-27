@@ -22,7 +22,8 @@
 			</parameter>
 			<parameter name="redirectUri" type="text" required="true">
 				<label>Redirect URI</label>
-				<description>OAuth2 callback URL registered in your Withings developer application (e.g. https://your-openhab.example.com/callback).</description>
+				<description>OAuth2 callback URL registered in your Withings developer application (e.g.
+					https://your-openhab.example.com/callback).</description>
 			</parameter>
 			<parameter name="accessToken" type="text" required="false">
 				<label>Access Token</label>
@@ -53,6 +54,7 @@
 			<channel-group id="cardiovascular" typeId="cardiovascular-measurements"/>
 			<channel-group id="activity" typeId="activity-measurements"/>
 			<channel-group id="sleep" typeId="sleep-measurements"/>
+			<channel-group id="device" typeId="device-measurements"/>
 		</channel-groups>
 
 		<config-description>
@@ -73,6 +75,11 @@
 			<parameter name="pollingIntervalSleep" type="integer" required="false">
 				<label>Sleep Polling Interval (min)</label>
 				<description>Interval in minutes to poll for new sleep data.</description>
+				<default>60</default>
+			</parameter>
+			<parameter name="pollingIntervalDevice" type="integer" required="false">
+				<label>Device Polling Interval (min)</label>
+				<description>Interval in minutes to poll for device info (battery, model, last session).</description>
 				<default>60</default>
 			</parameter>
 		</config-description>
@@ -126,6 +133,11 @@
 			<channel id="hrAverage" typeId="hr-average"/>
 			<channel id="hrMin" typeId="hr-min"/>
 			<channel id="hrMax" typeId="hr-max"/>
+			<channel id="hrZone0" typeId="hr-zone-0"/>
+			<channel id="hrZone1" typeId="hr-zone-1"/>
+			<channel id="hrZone2" typeId="hr-zone-2"/>
+			<channel id="hrZone3" typeId="hr-zone-3"/>
+			<channel id="activeDuration" typeId="active-duration"/>
 		</channels>
 	</channel-group-type>
 
@@ -150,6 +162,26 @@
 			<channel id="sleepRrAverage" typeId="sleep-rr-average"/>
 			<channel id="sleepRrMin" typeId="sleep-rr-min"/>
 			<channel id="sleepRrMax" typeId="sleep-rr-max"/>
+			<channel id="sleepEfficiency" typeId="sleep-efficiency"/>
+			<channel id="snoringEpisodes" typeId="snoring-episodes"/>
+			<channel id="totalTimeInBed" typeId="total-time-in-bed"/>
+			<channel id="nbRemEpisodes" typeId="nb-rem-episodes"/>
+			<channel id="nightEvents" typeId="night-events"/>
+			<channel id="outOfBedCount" typeId="out-of-bed-count"/>
+			<channel id="breathingDisturbances" typeId="breathing-disturbances"/>
+			<channel id="wakeupLatency" typeId="wakeup-latency"/>
+			<channel id="sleepLatency" typeId="sleep-latency"/>
+		</channels>
+	</channel-group-type>
+
+	<!-- ==================== Channel Group: Device ==================== -->
+	<channel-group-type id="device-measurements">
+		<label>Device</label>
+		<description>Withings device information and status</description>
+		<channels>
+			<channel id="battery" typeId="device-battery"/>
+			<channel id="lastSession" typeId="device-last-session"/>
+			<channel id="model" typeId="device-model"/>
 		</channels>
 	</channel-group-type>
 
@@ -456,6 +488,128 @@
 		<label>Sleep Max Respiration Rate</label>
 		<description>Maximum respiration rate during sleep</description>
 		<state readOnly="true" pattern="%d brpm"/>
+	</channel-type>
+
+	<!-- ==================== Channel Types: Activity (additional) ==================== -->
+	<channel-type id="hr-zone-0">
+		<item-type>Number:Time</item-type>
+		<label>HR Zone 0 (Rest)</label>
+		<description>Time spent in heart rate zone 0 (resting)</description>
+		<state readOnly="true" pattern="%.0f %unit%"/>
+	</channel-type>
+
+	<channel-type id="hr-zone-1">
+		<item-type>Number:Time</item-type>
+		<label>HR Zone 1 (Light)</label>
+		<description>Time spent in heart rate zone 1 (light effort)</description>
+		<state readOnly="true" pattern="%.0f %unit%"/>
+	</channel-type>
+
+	<channel-type id="hr-zone-2">
+		<item-type>Number:Time</item-type>
+		<label>HR Zone 2 (Moderate)</label>
+		<description>Time spent in heart rate zone 2 (moderate effort)</description>
+		<state readOnly="true" pattern="%.0f %unit%"/>
+	</channel-type>
+
+	<channel-type id="hr-zone-3">
+		<item-type>Number:Time</item-type>
+		<label>HR Zone 3 (Intense)</label>
+		<description>Time spent in heart rate zone 3 (intense effort)</description>
+		<state readOnly="true" pattern="%.0f %unit%"/>
+	</channel-type>
+
+	<channel-type id="active-duration">
+		<item-type>Number:Time</item-type>
+		<label>Active Duration</label>
+		<description>Total duration of active periods during the day</description>
+		<state readOnly="true" pattern="%.0f %unit%"/>
+	</channel-type>
+
+	<!-- ==================== Channel Types: Sleep (additional) ==================== -->
+	<channel-type id="sleep-efficiency">
+		<item-type>Number</item-type>
+		<label>Sleep Efficiency</label>
+		<description>Ratio of time asleep to total time in bed (0-100)</description>
+		<state readOnly="true" pattern="%.1f %%"/>
+	</channel-type>
+
+	<channel-type id="snoring-episodes">
+		<item-type>Number</item-type>
+		<label>Snoring Episodes</label>
+		<description>Number of snoring episodes during the night</description>
+		<state readOnly="true" pattern="%d"/>
+	</channel-type>
+
+	<channel-type id="total-time-in-bed">
+		<item-type>Number:Time</item-type>
+		<label>Total Time in Bed</label>
+		<description>Total time spent in bed (including awake time)</description>
+		<state readOnly="true" pattern="%.0f %unit%"/>
+	</channel-type>
+
+	<channel-type id="nb-rem-episodes">
+		<item-type>Number</item-type>
+		<label>REM Episodes</label>
+		<description>Number of REM sleep episodes during the night</description>
+		<state readOnly="true" pattern="%d"/>
+	</channel-type>
+
+	<channel-type id="night-events">
+		<item-type>Number</item-type>
+		<label>Night Events</label>
+		<description>Number of significant night events recorded</description>
+		<state readOnly="true" pattern="%d"/>
+	</channel-type>
+
+	<channel-type id="out-of-bed-count">
+		<item-type>Number</item-type>
+		<label>Out of Bed Count</label>
+		<description>Number of times getting out of bed during the night</description>
+		<state readOnly="true" pattern="%d"/>
+	</channel-type>
+
+	<channel-type id="breathing-disturbances">
+		<item-type>Number</item-type>
+		<label>Breathing Disturbances</label>
+		<description>Breathing disturbances intensity index during sleep</description>
+		<state readOnly="true" pattern="%.1f"/>
+	</channel-type>
+
+	<channel-type id="wakeup-latency">
+		<item-type>Number:Time</item-type>
+		<label>Wakeup Latency</label>
+		<description>Time between last alarm and getting out of bed</description>
+		<state readOnly="true" pattern="%.0f %unit%"/>
+	</channel-type>
+
+	<channel-type id="sleep-latency">
+		<item-type>Number:Time</item-type>
+		<label>Sleep Latency</label>
+		<description>Time taken to fall asleep after going to bed</description>
+		<state readOnly="true" pattern="%.0f %unit%"/>
+	</channel-type>
+
+	<!-- ==================== Channel Types: Device ==================== -->
+	<channel-type id="device-battery">
+		<item-type>String</item-type>
+		<label>Battery Level</label>
+		<description>Current battery level of the Withings device (high/medium/low)</description>
+		<state readOnly="true"/>
+	</channel-type>
+
+	<channel-type id="device-last-session">
+		<item-type>DateTime</item-type>
+		<label>Last Session</label>
+		<description>Timestamp of the last recorded session on the device</description>
+		<state readOnly="true"/>
+	</channel-type>
+
+	<channel-type id="device-model">
+		<item-type>String</item-type>
+		<label>Device Model</label>
+		<description>Model name of the Withings device</description>
+		<state readOnly="true"/>
 	</channel-type>
 
 </thing:thing-descriptions>

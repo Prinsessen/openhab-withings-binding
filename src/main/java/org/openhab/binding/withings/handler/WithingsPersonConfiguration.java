@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
@@ -26,4 +26,5 @@ public class WithingsPersonConfiguration {
     public int pollingIntervalBody = 15;
     public int pollingIntervalActivity = 30;
     public int pollingIntervalSleep = 60;
+    public int pollingIntervalDevice = 60;
 }

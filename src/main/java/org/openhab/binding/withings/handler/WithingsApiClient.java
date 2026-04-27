@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
@@ -206,8 +206,8 @@ public class WithingsApiClient {
         params.put("action", "getactivity");
         params.put("startdateymd", targetDate);
         params.put("enddateymd", targetDate);
-        params.put("data_fields",
-                "steps,distance,elevation,soft,moderate,intense,active,calories,totalcalories,hr_average,hr_min,hr_max");
+        params.put("data_fields", "steps,distance,elevation,soft,moderate,intense,active,calories,totalcalories,"
+                + "hr_average,hr_min,hr_max,hr_zone_0,hr_zone_1,hr_zone_2,hr_zone_3");
 
         try {
             String responseBody = postForm(API_MEASURE_V2_URL, params, true);
@@ -246,7 +246,8 @@ public class WithingsApiClient {
         params.put("data_fields",
                 "total_sleep_time,total_timeinbed,deepsleepduration,lightsleepduration,remsleepduration,"
                         + "wakeupduration,wakeupcount,durationtosleep,durationtowakeup,sleep_score,snoring,"
-                        + "snoringepisodecount,hr_average,hr_min,hr_max,rr_average,rr_min,rr_max,sleep_efficiency,"
+                        + "snoringepisodecount,nb_rem_episodes,night_events,out_of_bed_count,"
+                        + "hr_average,hr_min,hr_max,rr_average,rr_min,rr_max,sleep_efficiency,"
                         + "sleep_latency,wakeup_latency,breathing_disturbances_intensity");
 
         try {

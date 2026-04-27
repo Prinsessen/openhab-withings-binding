@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
@@ -35,6 +35,7 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.withings.dto.WithingsApiResponse;
 import org.openhab.binding.withings.dto.WithingsApiResponse.Activity;
+import org.openhab.binding.withings.dto.WithingsApiResponse.Device;
 import org.openhab.binding.withings.dto.WithingsApiResponse.Measure;
 import org.openhab.binding.withings.dto.WithingsApiResponse.MeasureGroup;
 import org.openhab.binding.withings.dto.WithingsApiResponse.SleepData;
@@ -42,6 +43,7 @@ import org.openhab.binding.withings.dto.WithingsApiResponse.SleepSummary;
 import org.openhab.core.library.types.DateTimeType;
 import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.library.types.QuantityType;
+import org.openhab.core.library.types.StringType;
 import org.openhab.core.library.unit.SIUnits;
 import org.openhab.core.library.unit.Units;
 import org.openhab.core.thing.Bridge;
@@ -70,6 +72,7 @@ public class WithingsPersonHandler extends BaseThingHandler {
     private @Nullable ScheduledFuture<?> bodyPollingJob;
     private @Nullable ScheduledFuture<?> activityPollingJob;
     private @Nullable ScheduledFuture<?> sleepPollingJob;
+    private @Nullable ScheduledFuture<?> devicePollingJob;
 
     // Initialize to 7 days ago to avoid loading entire measurement history on startup
     private long lastBodyUpdate = Instant.now().minusSeconds(7 * 24 * 3600).getEpochSecond();
@@ -134,6 +137,9 @@ public class WithingsPersonHandler extends BaseThingHandler {
                     case CHANNEL_GROUP_SLEEP:
                         scheduler.execute(this::pollSleep);
                         break;
+                    case CHANNEL_GROUP_DEVICE:
+                        scheduler.execute(this::pollDevices);
+                        break;
                 }
             }
         }
@@ -142,8 +148,9 @@ public class WithingsPersonHandler extends BaseThingHandler {
     private void startPolling(WithingsPersonConfiguration config) {
         stopPolling();
 
-        logger.info("Starting Withings polling: body={}min, activity={}min, sleep={}min", config.pollingIntervalBody,
-                config.pollingIntervalActivity, config.pollingIntervalSleep);
+        logger.info("Starting Withings polling: body={}min, activity={}min, sleep={}min, device={}min",
+                config.pollingIntervalBody, config.pollingIntervalActivity, config.pollingIntervalSleep,
+                config.pollingIntervalDevice);
 
         // Body measurements (includes cardiovascular from scales/BP monitors)
         bodyPollingJob = scheduler.scheduleWithFixedDelay(this::pollBodyMeasurements, 5,
@@ -155,6 +162,10 @@ public class WithingsPersonHandler extends BaseThingHandler {
 
         // Sleep data
         sleepPollingJob = scheduler.scheduleWithFixedDelay(this::pollSleep, 25, config.pollingIntervalSleep * 60L,
+                TimeUnit.SECONDS);
+
+        // Device info
+        devicePollingJob = scheduler.scheduleWithFixedDelay(this::pollDevices, 35, config.pollingIntervalDevice * 60L,
                 TimeUnit.SECONDS);
     }
 
@@ -173,6 +184,11 @@ public class WithingsPersonHandler extends BaseThingHandler {
         if (job != null) {
             job.cancel(true);
             sleepPollingJob = null;
+        }
+        job = devicePollingJob;
+        if (job != null) {
+            job.cancel(true);
+            devicePollingJob = null;
         }
     }
 
@@ -388,6 +404,20 @@ public class WithingsPersonHandler extends BaseThingHandler {
                 updateState(CHANNEL_GROUP_ACTIVITY + "#" + CHANNEL_HR_MAX, new DecimalType(activity.hr_max));
             }
 
+            // Heart rate zones (seconds per zone)
+            updateState(CHANNEL_GROUP_ACTIVITY + "#" + CHANNEL_HR_ZONE_0,
+                    new QuantityType<Time>(activity.hr_zone_0, Units.SECOND));
+            updateState(CHANNEL_GROUP_ACTIVITY + "#" + CHANNEL_HR_ZONE_1,
+                    new QuantityType<Time>(activity.hr_zone_1, Units.SECOND));
+            updateState(CHANNEL_GROUP_ACTIVITY + "#" + CHANNEL_HR_ZONE_2,
+                    new QuantityType<Time>(activity.hr_zone_2, Units.SECOND));
+            updateState(CHANNEL_GROUP_ACTIVITY + "#" + CHANNEL_HR_ZONE_3,
+                    new QuantityType<Time>(activity.hr_zone_3, Units.SECOND));
+
+            // Active duration
+            updateState(CHANNEL_GROUP_ACTIVITY + "#" + CHANNEL_ACTIVE_DURATION,
+                    new QuantityType<Time>(activity.active, Units.SECOND));
+
             logger.debug("Withings activity updated: {} steps, {}m distance, {} cal", activity.steps, activity.distance,
                     activity.calories);
 
@@ -472,11 +502,92 @@ public class WithingsPersonHandler extends BaseThingHandler {
                 updateState(CHANNEL_GROUP_SLEEP + "#" + CHANNEL_SLEEP_RR_MAX, new DecimalType(data.rr_max));
             }
 
+            // Additional sleep metrics
+            if (data.sleep_efficiency > 0) {
+                updateState(CHANNEL_GROUP_SLEEP + "#" + CHANNEL_SLEEP_EFFICIENCY,
+                        new DecimalType(data.sleep_efficiency));
+            }
+            if (data.snoringepisodecount > 0) {
+                updateState(CHANNEL_GROUP_SLEEP + "#" + CHANNEL_SNORING_EPISODES,
+                        new DecimalType(data.snoringepisodecount));
+            }
+            updateState(CHANNEL_GROUP_SLEEP + "#" + CHANNEL_TOTAL_TIME_IN_BED,
+                    new QuantityType<Time>(data.total_timeinbed, Units.SECOND));
+            if (data.nb_rem_episodes > 0) {
+                updateState(CHANNEL_GROUP_SLEEP + "#" + CHANNEL_NB_REM_EPISODES, new DecimalType(data.nb_rem_episodes));
+            }
+            if (data.night_events > 0) {
+                updateState(CHANNEL_GROUP_SLEEP + "#" + CHANNEL_NIGHT_EVENTS, new DecimalType(data.night_events));
+            }
+            if (data.out_of_bed_count > 0) {
+                updateState(CHANNEL_GROUP_SLEEP + "#" + CHANNEL_OUT_OF_BED_COUNT,
+                        new DecimalType(data.out_of_bed_count));
+            }
+            if (data.breathing_disturbances_intensity > 0) {
+                updateState(CHANNEL_GROUP_SLEEP + "#" + CHANNEL_BREATHING_DISTURBANCES,
+                        new DecimalType(data.breathing_disturbances_intensity));
+            }
+            if (data.wakeup_latency > 0) {
+                updateState(CHANNEL_GROUP_SLEEP + "#" + CHANNEL_WAKEUP_LATENCY,
+                        new QuantityType<Time>(data.wakeup_latency, Units.SECOND));
+            }
+            if (data.sleep_latency > 0) {
+                updateState(CHANNEL_GROUP_SLEEP + "#" + CHANNEL_SLEEP_LATENCY,
+                        new QuantityType<Time>(data.sleep_latency, Units.SECOND));
+            }
+
             logger.debug("Withings sleep updated: {}s total, score={}, {} wakeups", data.total_sleep_time,
                     data.sleep_score, data.wakeupcount);
 
         } catch (Exception e) {
             logger.warn("Error polling sleep: {}", e.getMessage());
+        }
+    }
+
+    // ==================== Device Data ====================
+
+    private void pollDevices() {
+        WithingsApiClient client = getApiClient();
+        if (client == null) {
+            logger.debug("Cannot poll devices - no API client");
+            return;
+        }
+
+        try {
+            WithingsApiResponse response = client.getDevices();
+            if (response == null || response.body == null) {
+                return;
+            }
+
+            List<Device> devices = response.body.devices;
+            if (devices == null || devices.isEmpty()) {
+                logger.debug("Withings devices: no devices returned");
+                return;
+            }
+
+            // Use the first device (most users have one primary device)
+            Device device = devices.get(0);
+
+            String battery = device.battery;
+            if (battery != null && !battery.isEmpty()) {
+                updateState(CHANNEL_GROUP_DEVICE + "#" + CHANNEL_DEVICE_BATTERY, new StringType(battery));
+            }
+
+            if (device.last_session_date > 0) {
+                ZonedDateTime lastSession = ZonedDateTime.ofInstant(Instant.ofEpochSecond(device.last_session_date),
+                        ZoneId.systemDefault());
+                updateState(CHANNEL_GROUP_DEVICE + "#" + CHANNEL_DEVICE_LAST_SESSION, new DateTimeType(lastSession));
+            }
+
+            String model = device.model;
+            if (model != null && !model.isEmpty()) {
+                updateState(CHANNEL_GROUP_DEVICE + "#" + CHANNEL_DEVICE_MODEL, new StringType(model));
+            }
+
+            logger.debug("Withings device updated: model={}, battery={}", device.model, device.battery);
+
+        } catch (Exception e) {
+            logger.warn("Error polling devices: {}", e.getMessage());
         }
     }
 }

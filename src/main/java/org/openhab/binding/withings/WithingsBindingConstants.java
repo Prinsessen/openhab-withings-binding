@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
@@ -40,6 +40,7 @@ public class WithingsBindingConstants {
     public static final String CHANNEL_GROUP_CARDIOVASCULAR = "cardiovascular";
     public static final String CHANNEL_GROUP_ACTIVITY = "activity";
     public static final String CHANNEL_GROUP_SLEEP = "sleep";
+    public static final String CHANNEL_GROUP_DEVICE = "device";
 
     // Body Channels
     public static final String CHANNEL_WEIGHT = "weight";
@@ -61,6 +62,11 @@ public class WithingsBindingConstants {
     public static final String CHANNEL_SPO2 = "spo2";
     public static final String CHANNEL_BODY_TEMPERATURE = "temperature";
 
+    // Device Channels
+    public static final String CHANNEL_DEVICE_BATTERY = "battery";
+    public static final String CHANNEL_DEVICE_LAST_SESSION = "lastSession";
+    public static final String CHANNEL_DEVICE_MODEL = "model";
+
     // Activity Channels
     public static final String CHANNEL_STEPS = "steps";
     public static final String CHANNEL_DISTANCE = "distance";
@@ -73,6 +79,11 @@ public class WithingsBindingConstants {
     public static final String CHANNEL_HR_AVERAGE = "hrAverage";
     public static final String CHANNEL_HR_MIN = "hrMin";
     public static final String CHANNEL_HR_MAX = "hrMax";
+    public static final String CHANNEL_HR_ZONE_0 = "hrZone0";
+    public static final String CHANNEL_HR_ZONE_1 = "hrZone1";
+    public static final String CHANNEL_HR_ZONE_2 = "hrZone2";
+    public static final String CHANNEL_HR_ZONE_3 = "hrZone3";
+    public static final String CHANNEL_ACTIVE_DURATION = "activeDuration";
 
     // Sleep Channels
     public static final String CHANNEL_TOTAL_SLEEP_TIME = "totalSleepTime";
@@ -91,9 +102,18 @@ public class WithingsBindingConstants {
     public static final String CHANNEL_SLEEP_RR_AVG = "sleepRrAverage";
     public static final String CHANNEL_SLEEP_RR_MIN = "sleepRrMin";
     public static final String CHANNEL_SLEEP_RR_MAX = "sleepRrMax";
+    public static final String CHANNEL_SLEEP_EFFICIENCY = "sleepEfficiency";
+    public static final String CHANNEL_SNORING_EPISODES = "snoringEpisodes";
+    public static final String CHANNEL_TOTAL_TIME_IN_BED = "totalTimeInBed";
+    public static final String CHANNEL_NB_REM_EPISODES = "nbRemEpisodes";
+    public static final String CHANNEL_NIGHT_EVENTS = "nightEvents";
+    public static final String CHANNEL_OUT_OF_BED_COUNT = "outOfBedCount";
+    public static final String CHANNEL_BREATHING_DISTURBANCES = "breathingDisturbances";
+    public static final String CHANNEL_WAKEUP_LATENCY = "wakeupLatency";
+    public static final String CHANNEL_SLEEP_LATENCY = "sleepLatency";
 
     // OAuth2 Scope
-    public static final String OAUTH_SCOPE = "user.metrics,user.activity";
+    public static final String OAUTH_SCOPE = "user.metrics,user.activity,user.sleepevents,user.info";
 
     // Withings API URLs
     public static final String API_AUTH_URL = "https://account.withings.com/oauth2_user/authorize2";
