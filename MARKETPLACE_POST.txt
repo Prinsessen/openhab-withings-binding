@@ -4,7 +4,7 @@
 | type | binding |
 | author | Nanna Agesen |
 | version range | \[5.0.0;6.0.0) |
-| download | [org.openhab.binding.withings-5.2.0-SNAPSHOT.jar](https://github.com/Prinsessen/openhab-withings-binding/releases/download/v1.1.2/org.openhab.binding.withings-5.2.0-SNAPSHOT.jar) |
+| download | [org.openhab.binding.withings-5.2.0-SNAPSHOT.jar](https://github.com/Prinsessen/openhab-withings-binding/releases/download/v1.2.0/org.openhab.binding.withings-5.2.0-SNAPSHOT.jar) |
 
 # Withings Health Binding
 
@@ -14,12 +14,13 @@ A comprehensive openHAB binding for **Withings** health devices — smart scales
 
 * **Body Composition** — Weight, fat ratio, fat mass, fat-free mass, muscle mass, bone mass, hydration from WiFi smart scales
 * **Cardiovascular Monitoring** — Heart rate, systolic/diastolic blood pressure, SpO2, pulse wave velocity, VO2 max, vascular age, body temperature
-* **Activity Tracking** — Steps, distance, calories, elevation, light/moderate/intense activity durations, heart rate zones
-* **Sleep Analysis** — Total sleep, deep/light/REM duration, wakeup count, sleep score, snoring, heart rate and respiration during sleep
+* **Activity Tracking** — Steps, distance, calories, elevation, light/moderate/intense activity durations, active duration, heart rate zones (0–3)
+* **Sleep Analysis** — Total sleep, deep/light/REM duration, wakeup count, sleep score, snoring episodes, breathing disturbances, heart rate and respiration during sleep
+* **Device Status** — Battery level, model name, last session timestamp per device
 * **OAuth2 Web Authorization** — Built-in servlet at `/withings` for browser-based authorization (modeled after HomeConnect binding)
 * **Automatic Token Refresh** — Tokens refreshed transparently before expiry, persisted via StorageService (survives reboots — even with `.things` file configuration)
 * **Multi-Person Support** — Multiple person things per account bridge, filtered by Withings user ID
-* **Configurable Polling** — Separate intervals for body (15 min), activity (30 min), and sleep (60 min)
+* **Configurable Polling** — Separate intervals for body (15 min), activity (30 min), sleep (60 min), and device info (60 min)
 * **User Filtering** — Measurements filtered by user ID to avoid mixing data from shared scales
 
 ## Supported Things
@@ -67,15 +68,20 @@ A comprehensive openHAB binding for **Withings** health devices — smart scales
 |----|----|----|
 | `activity#steps` | Number | Steps taken today |
 | `activity#distance` | Number:Length | Distance travelled (m) |
-| `activity#calories` | Number:Energy | Active calories burned (J) |
-| `activity#totalCalories` | Number:Energy | Total calories — active + passive (J) |
+| `activity#calories` | Number:Energy | Active calories burned (kcal) |
+| `activity#totalCalories` | Number:Energy | Total calories — active + passive (kcal) |
 | `activity#elevation` | Number | Floors climbed |
-| `activity#softActivity` | Number:Time | Light activity duration (s) |
-| `activity#moderateActivity` | Number:Time | Moderate activity duration (s) |
-| `activity#intenseActivity` | Number:Time | Intense activity duration (s) |
+| `activity#softActivity` | Number:Time | Light activity duration (min) |
+| `activity#moderateActivity` | Number:Time | Moderate activity duration (min) |
+| `activity#intenseActivity` | Number:Time | Intense activity duration (min) |
+| `activity#activeDuration` | Number:Time | Total active duration (min) |
 | `activity#hrAverage` | Number | Average heart rate (bpm) |
 | `activity#hrMin` | Number | Minimum heart rate (bpm) |
 | `activity#hrMax` | Number | Maximum heart rate (bpm) |
+| `activity#hrZone0` | Number:Time | Time in HR zone 0 — rest (min) |
+| `activity#hrZone1` | Number:Time | Time in HR zone 1 — light (min) |
+| `activity#hrZone2` | Number:Time | Time in HR zone 2 — moderate (min) |
+| `activity#hrZone3` | Number:Time | Time in HR zone 3 — intense (min) |
 
 **Devices:** ScanWatch, Steel HR, Move, Go
 
@@ -83,16 +89,24 @@ A comprehensive openHAB binding for **Withings** health devices — smart scales
 
 | Channel | Type | Description |
 |----|----|----|
-| `sleep#totalSleepTime` | Number:Time | Total time asleep (s) |
-| `sleep#deepSleepDuration` | Number:Time | Deep sleep duration (s) |
-| `sleep#lightSleepDuration` | Number:Time | Light sleep duration (s) |
-| `sleep#remSleepDuration` | Number:Time | REM sleep duration (s) |
+| `sleep#totalSleepTime` | Number:Time | Total time asleep (min) |
+| `sleep#totalTimeInBed` | Number:Time | Total time in bed (min) |
+| `sleep#deepSleepDuration` | Number:Time | Deep sleep duration (min) |
+| `sleep#lightSleepDuration` | Number:Time | Light sleep duration (min) |
+| `sleep#remSleepDuration` | Number:Time | REM sleep duration (min) |
+| `sleep#nbRemEpisodes` | Number | Number of REM episodes |
 | `sleep#wakeupCount` | Number | Wakeup count |
-| `sleep#wakeupDuration` | Number:Time | Time awake during night (s) |
-| `sleep#timeToSleep` | Number:Time | Time to fall asleep (s) |
-| `sleep#timeToWakeup` | Number:Time | Time in bed after waking (s) |
+| `sleep#wakeupDuration` | Number:Time | Time awake during night (min) |
+| `sleep#outOfBedCount` | Number | Number of out-of-bed events |
+| `sleep#timeToSleep` | Number:Time | Time to fall asleep (min) |
+| `sleep#sleepLatency` | Number:Time | Sleep latency (min) |
+| `sleep#wakeupLatency` | Number:Time | Time in bed after waking (min) |
 | `sleep#sleepScore` | Number | Sleep quality score (0–100) |
-| `sleep#snoring` | Number:Time | Snoring duration (s) |
+| `sleep#sleepEfficiency` | Number | Sleep efficiency (%) |
+| `sleep#snoring` | Number:Time | Snoring duration (min) |
+| `sleep#snoringEpisodes` | Number | Number of snoring episodes |
+| `sleep#breathingDisturbances` | Number | Breathing disturbance index |
+| `sleep#nightEvents` | Number | Total night events |
 | `sleep#sleepHrAverage` | Number | Average HR during sleep (bpm) |
 | `sleep#sleepHrMin` | Number | Min HR during sleep (bpm) |
 | `sleep#sleepHrMax` | Number | Max HR during sleep (bpm) |
@@ -101,6 +115,16 @@ A comprehensive openHAB binding for **Withings** health devices — smart scales
 | `sleep#sleepRrMax` | Number | Max respiration rate (brpm) |
 
 **Devices:** Sleep Analyzer, ScanWatch, Steel HR
+
+### Device Status *(new in v1.2.0)*
+
+| Channel | Type | Description |
+|----|----|----|
+| `device#battery` | String | Battery level (`high` / `medium` / `low`) |
+| `device#model` | String | Device model name (e.g. *ScanWatch*, *Body+*) |
+| `device#lastSession` | DateTime | Timestamp of last recorded session |
+
+**Devices:** All Withings devices
 
 ## Quick Start
 
@@ -112,8 +136,7 @@ Bridge withings:account:home "Withings Account" [
     clientSecret="YOUR_CLIENT_SECRET",
     redirectUri="https://your-openhab.example.com/callback"
 ] {
-    Thing person john "John" [userId=12345678, pollingIntervalBody=15, pollingIntervalActivity=30, pollingIntervalSleep=60]
-    Thing person jane "Jane" [userId=87654321]
+    Thing person john "John" [userId=12345678, pollingIntervalBody=15, pollingIntervalActivity=30, pollingIntervalSleep=60, pollingIntervalDevice=60]
 }
 ```
 
@@ -122,65 +145,35 @@ Bridge withings:account:home "Withings Account" [
 ```java
 Group gWithings "Withings Health" <body>
 
-Number:Mass   Withings_Weight         "Weight [%.1f kg]"           <body>  (gWithings) { channel="withings:person:home:john:body#weight" }
-Number        Withings_Fat_Ratio      "Fat Ratio [%.1f %%]"        <body>  (gWithings) { channel="withings:person:home:john:body#fatRatio" }
-Number:Mass   Withings_Fat_Mass       "Fat Mass [%.1f kg]"         <body>  (gWithings) { channel="withings:person:home:john:body#fatMass" }
-Number:Mass   Withings_Fat_Free_Mass  "Fat Free Mass [%.1f kg]"    <body>  (gWithings) { channel="withings:person:home:john:body#fatFreeMass" }
-Number:Mass   Withings_Muscle_Mass    "Muscle Mass [%.1f kg]"      <body>  (gWithings) { channel="withings:person:home:john:body#muscleMass" }
-Number:Mass   Withings_Bone_Mass      "Bone Mass [%.2f kg]"        <body>  (gWithings) { channel="withings:person:home:john:body#boneMass" }
-Number:Mass   Withings_Hydration      "Hydration [%.1f kg]"        <body>  (gWithings) { channel="withings:person:home:john:body#hydration" }
-DateTime      Withings_Last           "Last Measurement [%1$td-%1$tm-%1$tY %1$tH:%1$tM]" <time> (gWithings) { channel="withings:person:home:john:body#lastMeasurement" }
+Number:Mass   Withings_Weight         "Weight [%.1f kg]"                        (gWithings) { channel="withings:person:home:john:body#weight" }
+Number        Withings_Fat_Ratio      "Fat Ratio [%.1f %%]"                     (gWithings) { channel="withings:person:home:john:body#fatRatio" }
+Number:Mass   Withings_Muscle_Mass    "Muscle Mass [%.1f kg]"                   (gWithings) { channel="withings:person:home:john:body#muscleMass" }
+DateTime      Withings_Last           "Last Measurement [%1$td-%1$tm-%1$tY]"    (gWithings) { channel="withings:person:home:john:body#lastMeasurement" }
+
+String        Withings_Battery        "Battery [%s]"                            (gWithings) { channel="withings:person:home:john:device#battery" }
+String        Withings_Model          "Device [%s]"                             (gWithings) { channel="withings:person:home:john:device#model" }
 ```
 
 ### OAuth2 Authorization
 
 1. Configure bridge with `clientId`, `clientSecret`, and `redirectUri`
 2. Open `http://your-openhab:8080/withings` in a browser
-3. Click **"Authorize with Withings"** → log in → grant access
+3. Click **"Authorize with Withings"** → log in → grant all permissions
 4. Note the **User ID** shown on success page → use for person thing `userId`
 
-If behind a reverse proxy (nginx):
-
-```nginx
-location /callback {
-    proxy_pass http://127.0.0.1:8080/withings;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-Proto $scheme;
-}
-```
-
-### Weight Alert Rule
-
-```javascript
-rules.when()
-    .item("Withings_Weight").changed()
-    .then(event => {
-        const weight = items.getItem("Withings_Weight").numericState;
-        const previous = event.oldState;
-        if (previous !== null) {
-            const diff = weight - parseFloat(previous);
-            if (Math.abs(diff) > 1.0) {
-                actions.NotificationAction.sendBroadcastNotification(
-                    `Weight change: ${diff > 0 ? '+' : ''}${diff.toFixed(1)} kg (now ${weight.toFixed(1)} kg)`
-                );
-            }
-        }
-    })
-    .build("Withings Weight Change Alert");
-```
+> **Upgrading from v1.1.x?** This version adds the `user.info` and `user.sleepevents` scopes. You must re-authorize to grant the new permissions — open `/withings` and click Authorize again.
 
 ## Prerequisites
 
 * [Withings Developer Account](https://developer.withings.com/) with registered application
 * At least one Withings health device linked to your account
 * Public callback URL for OAuth2 (or use pre-configured tokens)
-* Scopes: `user.metrics`, `user.activity`
+* Required scopes: `user.metrics`, `user.activity`, `user.sleepevents`, `user.info`
 
 ## Resources
 
-* **Download JAR:** [org.openhab.binding.withings-5.2.0-SNAPSHOT.jar](https://github.com/Prinsessen/openhab-withings-binding/releases/download/v1.1.2/org.openhab.binding.withings-5.2.0-SNAPSHOT.jar) (45.9 KB)
+* **Download JAR:** [org.openhab.binding.withings-5.2.0-SNAPSHOT.jar](https://github.com/Prinsessen/openhab-withings-binding/releases/download/v1.2.0/org.openhab.binding.withings-5.2.0-SNAPSHOT.jar) (47.4 KB)
 * **Source Code:** [github.com/Prinsessen/openhab-withings-binding](https://github.com/Prinsessen/openhab-withings-binding)
 * **Full Documentation:** [README.md](https://github.com/Prinsessen/openhab-withings-binding/blob/main/README.md)
-* **Changelog:** [v1.1.2 — Defensive float handling for sleep & respiration data](https://github.com/Prinsessen/openhab-withings-binding/releases/tag/v1.1.2)
+* **Changelog:** [v1.2.0 — Device channels, extended sleep & activity](https://github.com/Prinsessen/openhab-withings-binding/releases/tag/v1.2.0)
 * **License:** EPL-2.0
