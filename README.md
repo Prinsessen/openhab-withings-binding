@@ -328,6 +328,62 @@ Frame label="Device" {
 
 ---
 
+## Rules Examples
+
+### Battery low notification
+
+```javascript
+rules.when()
+    .item("Withings_Device_Battery").changed()
+    .then(() => {
+        const battery = items.getItem("Withings_Device_Battery").state;
+        if (battery && battery.toLowerCase() === "low") {
+            const model = items.getItem("Withings_Device_Model").state;
+            actions.NotificationAction.sendBroadcastNotification(
+                `Withings ${model} batteri er lavt — husk at oplade`
+            );
+        }
+    })
+    .build("Withings Battery Low Alert");
+```
+
+### Weight change notification
+
+```javascript
+rules.when()
+    .item("Withings_Weight").changed()
+    .then(event => {
+        const weight   = items.getItem("Withings_Weight").numericState;
+        const previous = parseFloat(event.oldState);
+        if (!isNaN(previous)) {
+            const diff = weight - previous;
+            if (Math.abs(diff) >= 0.5) {
+                actions.NotificationAction.sendBroadcastNotification(
+                    `Vægt: ${diff > 0 ? '+' : ''}${diff.toFixed(1)} kg (nu ${weight.toFixed(1)} kg)`
+                );
+            }
+        }
+    })
+    .build("Withings Weight Change");
+```
+
+### Sleep score notification
+
+```javascript
+rules.when()
+    .item("Withings_Sleep_Score").changed()
+    .then(() => {
+        const score = items.getItem("Withings_Sleep_Score").numericState;
+        const quality = score >= 70 ? "god" : score >= 50 ? "middel" : "dårlig";
+        actions.NotificationAction.sendBroadcastNotification(
+            `Søvnscore: ${score} (${quality})`
+        );
+    })
+    .build("Withings Sleep Score Notification");
+```
+
+---
+
 ## Upgrading from v1.x
 
 ### ⚠️ Breaking Change: `person` is now a Bridge
