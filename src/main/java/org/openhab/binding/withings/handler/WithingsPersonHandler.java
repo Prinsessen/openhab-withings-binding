@@ -19,6 +19,7 @@ import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,10 +49,10 @@ import org.openhab.core.library.unit.SIUnits;
 import org.openhab.core.library.unit.Units;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.ChannelUID;
-import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.thing.ThingStatusDetail;
-import org.openhab.core.thing.binding.BaseThingHandler;
+import org.openhab.core.thing.binding.BaseBridgeHandler;
+import org.openhab.core.thing.binding.ThingHandlerService;
 import org.openhab.core.types.Command;
 import org.openhab.core.types.RefreshType;
 import org.slf4j.Logger;
@@ -65,7 +66,7 @@ import org.slf4j.LoggerFactory;
  * @author OpenHAB Withings Binding - Initial contribution
  */
 @NonNullByDefault
-public class WithingsPersonHandler extends BaseThingHandler {
+public class WithingsPersonHandler extends BaseBridgeHandler {
 
     private final Logger logger = LoggerFactory.getLogger(WithingsPersonHandler.class);
 
@@ -81,8 +82,13 @@ public class WithingsPersonHandler extends BaseThingHandler {
     /** Optional device model filter — empty means "most recently synced" */
     private String deviceModel = "";
 
-    public WithingsPersonHandler(Thing thing) {
-        super(thing);
+    public WithingsPersonHandler(Bridge bridge) {
+        super(bridge);
+    }
+
+    @Override
+    public Collection<Class<? extends ThingHandlerService>> getServices() {
+        return List.of(WithingsDiscoveryService.class);
     }
 
     @Override
@@ -199,7 +205,7 @@ public class WithingsPersonHandler extends BaseThingHandler {
         }
     }
 
-    private @Nullable WithingsApiClient getApiClient() {
+    public @Nullable WithingsApiClient getApiClient() {
         Bridge bridge = getBridge();
         if (bridge != null && bridge.getHandler() instanceof WithingsAccountHandler accountHandler) {
             return accountHandler.getApiClient();

@@ -40,14 +40,15 @@
 	</bridge-type>
 
 	<!-- ==================== Thing: Person ==================== -->
-	<thing-type id="person">
+	<bridge-type id="person">
 		<supported-bridge-type-refs>
 			<bridge-type-ref id="account"/>
 		</supported-bridge-type-refs>
 
 		<label>Withings Person</label>
 		<description>A person tracked by Withings health devices. Provides body measurements, cardiovascular data, activity
-			metrics, and sleep analysis.</description>
+			metrics, and sleep analysis. Device things (battery, model, last session) are auto-discovered under this
+			bridge.</description>
 
 		<channel-groups>
 			<channel-group id="body" typeId="body-measurements"/>
@@ -87,6 +88,33 @@
 				<description>Optional: only show device status (battery, model, last session) for the device whose model name
 					contains this text (case-insensitive). Example: "ScanWatch", "Body+", "BPM Connect". Leave empty to use the most
 					recently synced device.</description>
+			</parameter>
+		</config-description>
+	</bridge-type>
+
+	<!-- ==================== Thing: Device (auto-discovered) ==================== -->
+	<thing-type id="device">
+		<supported-bridge-type-refs>
+			<bridge-type-ref id="person"/>
+		</supported-bridge-type-refs>
+
+		<label>Withings Device</label>
+		<description>A physical Withings device (ScanWatch, Body+, BPM Connect, etc.) linked to a person. Reports battery
+			level, model name, and last session timestamp.</description>
+
+		<channel-groups>
+			<channel-group id="device" typeId="device-measurements"/>
+		</channel-groups>
+
+		<config-description>
+			<parameter name="deviceId" type="text" required="true">
+				<label>Device ID</label>
+				<description>Withings internal device ID (set automatically during discovery).</description>
+			</parameter>
+			<parameter name="pollingIntervalDevice" type="integer" required="false">
+				<label>Polling Interval (min)</label>
+				<description>Interval in minutes to poll for device info (battery, model, last session).</description>
+				<default>60</default>
 			</parameter>
 		</config-description>
 	</thing-type>

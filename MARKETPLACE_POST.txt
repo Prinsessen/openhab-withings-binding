@@ -1,134 +1,55 @@
-| Key | Value |
-|----|----|
-| uid | withings |
-| type | binding |
-| author | Nanna Agesen |
-| version range | \[5.0.0;6.0.0) |
-| download | [org.openhab.binding.withings-5.2.0-SNAPSHOT.jar](https://github.com/Prinsessen/openhab-withings-binding/releases/download/v1.3.0/org.openhab.binding.withings-5.2.0-SNAPSHOT.jar) |
-
 # Withings Health Binding
 
-A comprehensive openHAB binding for **Withings** health devices — smart scales, blood pressure monitors, activity trackers, sleep monitors, and thermometers. Retrieves body measurements, cardiovascular data, activity metrics, and sleep analysis via the Withings Cloud API v2 with full OAuth2 authorization.
+Track your health metrics from Withings smart scales, blood pressure monitors, activity trackers, and sleep monitors — directly in openHAB.
 
-## Features
+---
 
-* **Body Composition** — Weight, fat ratio, fat mass, fat-free mass, muscle mass, bone mass, hydration from WiFi smart scales
-* **Cardiovascular Monitoring** — Heart rate, systolic/diastolic blood pressure, SpO2, pulse wave velocity, VO2 max, vascular age, body temperature
-* **Activity Tracking** — Steps, distance, calories, elevation, light/moderate/intense activity durations, active duration, heart rate zones (0–3)
-* **Sleep Analysis** — Total sleep, deep/light/REM duration, wakeup count, sleep score, snoring episodes, breathing disturbances, heart rate and respiration during sleep
-* **Device Status** — Battery level, model name, last session timestamp per device
-* **OAuth2 Web Authorization** — Built-in servlet at `/withings` for browser-based authorization (modeled after HomeConnect binding)
-* **Automatic Token Refresh** — Tokens refreshed transparently before expiry, persisted via StorageService (survives reboots — even with `.things` file configuration)
-* **Multi-Person Support** — Multiple person things per account bridge, filtered by Withings user ID
-* **Configurable Polling** — Separate intervals for body (15 min), activity (30 min), sleep (60 min), and device info (60 min)
-* **User Filtering** — Measurements filtered by user ID to avoid mixing data from shared scales
+## What it does
+
+- **Body composition** — weight, fat ratio, muscle mass, bone mass, hydration
+- **Cardiovascular** — heart rate, blood pressure, SpO2, VO2 max, vascular age
+- **Activity** — steps, distance, calories, elevation, heart rate zones
+- **Sleep** — deep/light/REM stages, sleep score, efficiency, snoring, breathing disturbances
+- **Device status** — battery level, model name, last sync — per physical device
+
+All data is retrieved from the Withings Cloud API v2. Authorization via built-in OAuth2 web UI.
+
+---
 
 ## Supported Things
 
-| Thing Type | Description |
-|----|----|
-| `account` (Bridge) | Withings API account — manages OAuth2 tokens |
-| `person` | Individual user — polls measurements by user ID |
+| Thing | Type | Description |
+|---|---|---|
+| `withings:account` | Bridge | Withings developer app — manages OAuth2 tokens |
+| `withings:person` | Bridge | A Withings user account — health data channels |
+| `withings:device` | Thing | A physical Withings device — battery, model, last session |
 
-## Channels
+---
 
-### Body Measurements
+## ⚠️ v2.0 — Breaking Change for Upgraders
 
-| Channel | Type | Description |
-|----|----|----|
-| `body#weight` | Number:Mass | Body weight (kg) |
-| `body#fatRatio` | Number | Body fat percentage (%) |
-| `body#fatMass` | Number:Mass | Fat mass (kg) |
-| `body#fatFreeMass` | Number:Mass | Fat-free / lean body mass (kg) |
-| `body#muscleMass` | Number:Mass | Muscle mass (kg) |
-| `body#boneMass` | Number:Mass | Bone mass (kg) |
-| `body#hydration` | Number:Mass | Body hydration (kg) |
-| `body#lastMeasurement` | DateTime | Timestamp of most recent measurement |
+**`withings:person` is now a Bridge (was a Thing).**
 
-**Devices:** Body, Body+, Body Comp, Body Scan
+If you are upgrading from v1.x:
 
-### Cardiovascular
+1. Change `Thing person` → `Bridge person` in your `.things` file
+2. Add a nested `Thing device` for each physical device (or discover via Inbox)
+3. Update items linking device channels: `withings:person:...:device#battery` → `withings:device:...:device#battery`
+4. No re-authorization needed — existing tokens remain valid
 
-| Channel | Type | Description |
-|----|----|----|
-| `cardiovascular#heartPulse` | Number | Heart rate (bpm) |
-| `cardiovascular#systolicBP` | Number:Pressure | Systolic blood pressure (mmHg) |
-| `cardiovascular#diastolicBP` | Number:Pressure | Diastolic blood pressure (mmHg) |
-| `cardiovascular#pulseWaveVelocity` | Number | Pulse wave velocity (m/s) |
-| `cardiovascular#vo2Max` | Number | VO2 Max (ml/min/kg) |
-| `cardiovascular#vascularAge` | Number | Estimated vascular age (years) |
-| `cardiovascular#spo2` | Number | Blood oxygen saturation (%) |
-| `cardiovascular#temperature` | Number:Temperature | Body temperature (°C) |
+See the full migration guide in the README.
 
-**Devices:** BPM Connect, BPM Core, Body Scan, ScanWatch, Thermo
-
-### Activity
-
-| Channel | Type | Description |
-|----|----|----|
-| `activity#steps` | Number | Steps taken today |
-| `activity#distance` | Number:Length | Distance travelled (m) |
-| `activity#calories` | Number:Energy | Active calories burned (kcal) |
-| `activity#totalCalories` | Number:Energy | Total calories — active + passive (kcal) |
-| `activity#elevation` | Number | Floors climbed |
-| `activity#softActivity` | Number:Time | Light activity duration (min) |
-| `activity#moderateActivity` | Number:Time | Moderate activity duration (min) |
-| `activity#intenseActivity` | Number:Time | Intense activity duration (min) |
-| `activity#activeDuration` | Number:Time | Total active duration (min) |
-| `activity#hrAverage` | Number | Average heart rate (bpm) |
-| `activity#hrMin` | Number | Minimum heart rate (bpm) |
-| `activity#hrMax` | Number | Maximum heart rate (bpm) |
-| `activity#hrZone0` | Number:Time | Time in HR zone 0 — rest (min) |
-| `activity#hrZone1` | Number:Time | Time in HR zone 1 — light (min) |
-| `activity#hrZone2` | Number:Time | Time in HR zone 2 — moderate (min) |
-| `activity#hrZone3` | Number:Time | Time in HR zone 3 — intense (min) |
-
-**Devices:** ScanWatch, Steel HR, Move, Go
-
-### Sleep
-
-| Channel | Type | Description |
-|----|----|----|
-| `sleep#totalSleepTime` | Number:Time | Total time asleep (min) |
-| `sleep#totalTimeInBed` | Number:Time | Total time in bed (min) |
-| `sleep#deepSleepDuration` | Number:Time | Deep sleep duration (min) |
-| `sleep#lightSleepDuration` | Number:Time | Light sleep duration (min) |
-| `sleep#remSleepDuration` | Number:Time | REM sleep duration (min) |
-| `sleep#nbRemEpisodes` | Number | Number of REM episodes |
-| `sleep#wakeupCount` | Number | Wakeup count |
-| `sleep#wakeupDuration` | Number:Time | Time awake during night (min) |
-| `sleep#outOfBedCount` | Number | Number of out-of-bed events |
-| `sleep#timeToSleep` | Number:Time | Time to fall asleep (min) |
-| `sleep#sleepLatency` | Number:Time | Sleep latency (min) |
-| `sleep#wakeupLatency` | Number:Time | Time in bed after waking (min) |
-| `sleep#sleepScore` | Number | Sleep quality score (0–100) |
-| `sleep#sleepEfficiency` | Number | Sleep efficiency (%) |
-| `sleep#snoring` | Number:Time | Snoring duration (min) |
-| `sleep#snoringEpisodes` | Number | Number of snoring episodes |
-| `sleep#breathingDisturbances` | Number | Breathing disturbance index |
-| `sleep#nightEvents` | Number | Total night events |
-| `sleep#sleepHrAverage` | Number | Average HR during sleep (bpm) |
-| `sleep#sleepHrMin` | Number | Min HR during sleep (bpm) |
-| `sleep#sleepHrMax` | Number | Max HR during sleep (bpm) |
-| `sleep#sleepRrAverage` | Number | Average respiration rate (brpm) |
-| `sleep#sleepRrMin` | Number | Min respiration rate (brpm) |
-| `sleep#sleepRrMax` | Number | Max respiration rate (brpm) |
-
-**Devices:** Sleep Analyzer, ScanWatch, Steel HR
-
-### Device Status *(new in v1.2.0)*
-
-| Channel | Type | Description |
-|----|----|----|
-| `device#battery` | String | Battery level (`high` / `medium` / `low`) |
-| `device#model` | String | Device model name (e.g. *ScanWatch*, *Body+*) |
-| `device#lastSession` | DateTime | Timestamp of last recorded session |
-> **Multiple devices?** If you have more than one Withings device (e.g. a ScanWatch and a Body+ scale), add `deviceModel="ScanWatch"` to your person thing configuration to pin the device status channels to a specific device. Without this, the most recently synced device is shown. *(new in v1.3.0)*
-**Devices:** All Withings devices
+---
 
 ## Quick Start
 
-### withings.things
+### 1. Register a Withings developer application
+
+Go to https://developer.withings.com/ — create an app, note your Client ID and Client Secret.
+Set the **Redirect URI** to `https://your-openhab:8080/callback`.
+Required scopes: `user.metrics,user.activity,user.sleepevents,user.info`
+
+### 2. Configure things
 
 ```java
 Bridge withings:account:home "Withings Account" [
@@ -136,46 +57,89 @@ Bridge withings:account:home "Withings Account" [
     clientSecret="YOUR_CLIENT_SECRET",
     redirectUri="https://your-openhab.example.com/callback"
 ] {
-    Thing person john "John" [userId=12345678, pollingIntervalBody=15, pollingIntervalActivity=30, pollingIntervalSleep=60, pollingIntervalDevice=60]
+    Bridge person nanna "Nanna" [
+        userId=17873009,
+        pollingIntervalBody=15,
+        pollingIntervalActivity=30,
+        pollingIntervalSleep=60
+    ] {
+        // Discover via Inbox — or add manually with deviceId from discovery
+        Thing device body_plus "Withings Body+" [
+            deviceId="030166b1ec0906a5220da271daa01a0cab245cfd"
+        ]
+    }
 }
 ```
 
-### withings.items
+### 3. Authorize
+
+Open `http://your-openhab:8080/withings` in a browser and click **Authorize with Withings**.
+The bridge will go `ONLINE`. Note the **User ID** shown — use it for `userId` in the person bridge.
+
+### 4. Discover physical devices
+
+Go to **Settings → Things → (person bridge) → Scan for Things**.
+Devices appear in the Inbox. Approve them — they become child things under the person bridge.
+
+### 5. Link items
 
 ```java
-Group gWithings "Withings Health" <body>
+// Body
+Number:Mass  Withings_Weight   "Weight [%.1f kg]"     { channel="withings:person:home:nanna:body#weight" }
+Number       Withings_FatRatio "Fat ratio [%.1f %%]"  { channel="withings:person:home:nanna:body#fatRatio" }
+Number:Mass  Withings_Muscle   "Muscle [%.1f kg]"     { channel="withings:person:home:nanna:body#muscleMass" }
 
-Number:Mass   Withings_Weight         "Weight [%.1f kg]"                        (gWithings) { channel="withings:person:home:john:body#weight" }
-Number        Withings_Fat_Ratio      "Fat Ratio [%.1f %%]"                     (gWithings) { channel="withings:person:home:john:body#fatRatio" }
-Number:Mass   Withings_Muscle_Mass    "Muscle Mass [%.1f kg]"                   (gWithings) { channel="withings:person:home:john:body#muscleMass" }
-DateTime      Withings_Last           "Last Measurement [%1$td-%1$tm-%1$tY]"    (gWithings) { channel="withings:person:home:john:body#lastMeasurement" }
-
-String        Withings_Battery        "Battery [%s]"                            (gWithings) { channel="withings:person:home:john:device#battery" }
-String        Withings_Model          "Device [%s]"                             (gWithings) { channel="withings:person:home:john:device#model" }
+// Device (note: withings:device, not withings:person)
+String       Withings_Battery  "Battery [%s]"         { channel="withings:device:home:nanna:body_plus:device#battery" }
+String       Withings_Model    "Model [%s]"           { channel="withings:device:home:nanna:body_plus:device#model" }
 ```
 
-### OAuth2 Authorization
+---
 
-1. Configure bridge with `clientId`, `clientSecret`, and `redirectUri`
-2. Open `http://your-openhab:8080/withings` in a browser
-3. Click **"Authorize with Withings"** → log in → grant all permissions
-4. Note the **User ID** shown on success page → use for person thing `userId`
+## Requirements
 
-> **Upgrading from v1.1.x?** This version adds the `user.info` and `user.sleepevents` scopes. You must re-authorize to grant the new permissions — open `/withings` and click Authorize again.
+- openHAB 4.x or 5.x
+- A Withings developer account (free)
+- At least one Withings device synced to the Withings app
 
-> **Upgrading from v1.2.x?** No re-authorization needed. Optionally add `deviceModel="YourDeviceName"` to your person thing if you have multiple Withings devices.
+---
 
-## Prerequisites
+## Download
 
-* [Withings Developer Account](https://developer.withings.com/) with registered application
-* At least one Withings health device linked to your account
-* Public callback URL for OAuth2 (or use pre-configured tokens)
-* Required scopes: `user.metrics`, `user.activity`, `user.sleepevents`, `user.info`
+Download the latest JAR from GitHub Releases:  
+https://github.com/Prinsessen/openhab-withings-binding/releases/latest
 
-## Resources
+Place it in `/usr/share/openhab/addons/` — no restart needed.
 
-* **Download JAR:** [org.openhab.binding.withings-5.2.0-SNAPSHOT.jar](https://github.com/Prinsessen/openhab-withings-binding/releases/download/v1.3.0/org.openhab.binding.withings-5.2.0-SNAPSHOT.jar) (49 KB)
-* **Source Code:** [github.com/Prinsessen/openhab-withings-binding](https://github.com/Prinsessen/openhab-withings-binding)
-* **Full Documentation:** [README.md](https://github.com/Prinsessen/openhab-withings-binding/blob/main/README.md)
-* **Changelog:** [v1.3.0 — Device model filter for multi-device accounts](https://github.com/Prinsessen/openhab-withings-binding/releases/tag/v1.3.0)
-* **License:** EPL-2.0
+---
+
+## Documentation
+
+Full documentation including all channels, troubleshooting, and migration guide:  
+https://github.com/Prinsessen/openhab-withings-binding/blob/main/README.md
+
+---
+
+## Changelog
+
+**v2.0.0 (April 2026)** ⚠️ BREAKING  
+Three-tier architecture: account → person → device. Physical devices auto-discovered via Inbox. `withings:person` is now a Bridge.
+
+**v1.3.0 (April 2026)**  
+Device channels show most recently synced device. Optional `deviceModel` filter.
+
+**v1.2.0 (April 2026)**  
+Device status channels. Extended sleep + activity channels.
+
+**v1.1.0 (March 2026)**  
+Token persistence (survives reboots). Multi-person support.
+
+**v1.0.0 (March 2026)**  
+Initial release.
+
+---
+
+## Author
+
+Nanna Agesen — https://github.com/Prinsessen  
+Issues and contributions: https://github.com/Prinsessen/openhab-withings-binding/issues

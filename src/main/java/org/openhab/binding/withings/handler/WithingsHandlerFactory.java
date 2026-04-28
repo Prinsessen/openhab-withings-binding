@@ -39,7 +39,8 @@ import org.osgi.service.component.annotations.Reference;
 @Component(configurationPid = "binding.withings", service = ThingHandlerFactory.class)
 public class WithingsHandlerFactory extends BaseThingHandlerFactory {
 
-    private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Set.of(THING_TYPE_ACCOUNT, THING_TYPE_PERSON);
+    private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = Set.of(THING_TYPE_ACCOUNT, THING_TYPE_PERSON,
+            THING_TYPE_DEVICE);
 
     private final WithingsServlet withingsServlet;
     private final StorageService storageService;
@@ -63,7 +64,9 @@ public class WithingsHandlerFactory extends BaseThingHandlerFactory {
         if (THING_TYPE_ACCOUNT.equals(thingTypeUID)) {
             return new WithingsAccountHandler((Bridge) thing, withingsServlet, storageService);
         } else if (THING_TYPE_PERSON.equals(thingTypeUID)) {
-            return new WithingsPersonHandler(thing);
+            return new WithingsPersonHandler((Bridge) thing);
+        } else if (THING_TYPE_DEVICE.equals(thingTypeUID)) {
+            return new WithingsDeviceHandler(thing);
         }
 
         return null;
