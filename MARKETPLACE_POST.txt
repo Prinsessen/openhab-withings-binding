@@ -23,6 +23,23 @@ A comprehensive openHAB binding for **Withings** health devices — smart scales
 * **Multi-Person Support** — Multiple person bridges per account, filtered by Withings user ID
 * **Configurable Polling** — Separate intervals for body (15 min), activity (30 min), sleep (60 min), and device info (60 min)
 
+## ⚠️ Upgrading from v1.x — Breaking Changes
+
+**`withings:person` is now a Bridge (was a Thing).** The device status channels have moved to a dedicated `withings:device` thing.
+
+Required changes to your configuration:
+
+1. Change `Thing person` → `Bridge person` in your `.things` file
+2. Add a nested `Thing device` for each physical device (or discover via Inbox — see Quick Start)
+3. Update items linking device channels:
+   * Old: `withings:person:home:john:device#battery`
+   * New: `withings:device:home:john:body_plus:device#battery`
+4. **No re-authorization needed** — existing OAuth2 tokens remain valid
+
+Full step-by-step migration guide: [README — Upgrading from v1.x](https://github.com/Prinsessen/openhab-withings-binding/blob/main/README.md#upgrading-from-v1x)
+
+---
+
 ## Supported Things
 
 | Thing Type | Description |
