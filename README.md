@@ -36,6 +36,8 @@ A comprehensive openHAB binding for **Withings** health devices — smart scales
 - [Architecture](#architecture)
 - [Troubleshooting](#troubleshooting)
 - [License](#license)
+- [Changelog](#changelog)
+- [Credits](#credits)
 
 ---
 
@@ -724,3 +726,41 @@ http://www.eclipse.org/legal/epl-2.0
 
 SPDX-License-Identifier: EPL-2.0
 ```
+
+---
+
+## Changelog
+
+### v1.3.0 — April 2026
+- **Fix:** Device status channels (`battery`, `model`, `lastSession`) now show the **most recently synced** device instead of always the first in the API list
+- **New:** Optional `deviceModel` parameter on person thing — pin device status to a specific device by model name substring match (e.g. `deviceModel="ScanWatch"`)
+- Fallback to most recently synced device if `deviceModel` is set but no match found (with warning in log)
+
+### v1.2.0 — April 2026
+- **New:** `device` channel group — `battery`, `model`, `lastSession` for all Withings devices
+- **New:** Extended sleep channels — `nbRemEpisodes`, `outOfBedCount`, `timeToSleep`, `sleepLatency`, `wakeupLatency`, `sleepEfficiency`, `nightEvents`, `sleepHrMin/Max`, `sleepRrAverage/Min/Max`
+- **New:** Extended activity channels — `totalCalories`, `hrMin`, `hrMax`, `hrZone0–3`
+- Added `user.sleepevents` and `user.info` OAuth2 scopes (re-authorization required when upgrading from v1.1.x)
+
+### v1.1.0 — March 2026
+- **New:** Token persistence via `StorageService` — tokens survive reboots without needing manual re-entry in `.things` files
+- **New:** Multi-person support — multiple `person` things per bridge, filtered by Withings user ID
+- **Fix:** Stale token handling — bridge recovers gracefully from 401 by triggering re-authorization
+
+### v1.0.0 — March 2026
+- Initial release
+- Body composition channels (weight, fat, muscle, bone, hydration)
+- Cardiovascular channels (heart rate, blood pressure, SpO2, VO2 max, vascular age)
+- Activity channels (steps, distance, calories, elevation, activity durations)
+- Sleep channels (sleep stages, wakeup count, snoring, breathing disturbances, sleep score)
+- OAuth2 web authorization servlet at `/withings`
+- Configurable polling intervals per channel group
+
+---
+
+## Credits
+
+**Author:** [Nanna Agesen](https://github.com/Prinsessen)
+
+Built as a community binding for the [openHAB](https://www.openhab.org/) smart home platform.
+Feedback and contributions welcome via [GitHub Issues](https://github.com/Prinsessen/openhab-withings-binding/issues).
