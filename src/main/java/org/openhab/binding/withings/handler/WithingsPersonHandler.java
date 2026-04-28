@@ -78,6 +78,9 @@ public class WithingsPersonHandler extends BaseThingHandler {
     private long lastBodyUpdate = Instant.now().minusSeconds(7 * 24 * 3600).getEpochSecond();
     private int userId = 0;
 
+    /** Optional device model filter — empty means "most recently synced" */
+    private String deviceModel = "";
+
     public WithingsPersonHandler(Thing thing) {
         super(thing);
     }
@@ -107,6 +110,10 @@ public class WithingsPersonHandler extends BaseThingHandler {
         }
 
         this.userId = config.userId;
+        this.deviceModel = config.deviceModel != null ? config.deviceModel.trim() : "";
+        if (!deviceModel.isEmpty()) {
+            logger.debug("Withings device filter: will use device matching '{}'", deviceModel);
+        }
 
         updateStatus(ThingStatus.ONLINE);
 
@@ -565,8 +572,25 @@ public class WithingsPersonHandler extends BaseThingHandler {
                 return;
             }
 
-            // Use the first device (most users have one primary device)
-            Device device = devices.get(0);
+            // Select device: match deviceModel filter if configured, else use most recently synced
+            Device device = mostRecentDevice(devices);
+            if (!deviceModel.isEmpty()) {
+                String filterLower = deviceModel.toLowerCase();
+                Device matched = null;
+                for (Device d : devices) {
+                    if (d.model != null && d.model.toLowerCase().contains(filterLower)) {
+                        matched = d;
+                        break;
+                    }
+                }
+                if (matched != null) {
+                    device = matched;
+                } else {
+                    logger.warn("Withings: no device matching '{}' found, falling back to most recently synced",
+                            deviceModel);
+                }
+            }
+            logger.debug("Withings device selected: model={} (from {} available)", device.model, devices.size());
 
             String battery = device.battery;
             if (battery != null && !battery.isEmpty()) {
@@ -589,5 +613,16 @@ public class WithingsPersonHandler extends BaseThingHandler {
         } catch (Exception e) {
             logger.warn("Error polling devices: {}", e.getMessage());
         }
+    }
+
+    /** Returns the device with the highest last_session_date (most recently synced). */
+    private Device mostRecentDevice(List<Device> devices) {
+        Device best = devices.get(0);
+        for (Device d : devices) {
+            if (d.last_session_date > best.last_session_date) {
+                best = d;
+            }
+        }
+        return best;
     }
 }

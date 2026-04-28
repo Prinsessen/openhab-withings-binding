@@ -27,4 +27,11 @@ public class WithingsPersonConfiguration {
     public int pollingIntervalActivity = 30;
     public int pollingIntervalSleep = 60;
     public int pollingIntervalDevice = 60;
+
+    /**
+     * Optional: filter device status channels to a specific device model name.
+     * If empty, the most recently synced device is used.
+     * Example: "ScanWatch", "Body+", "BPM Connect"
+     */
+    public @org.eclipse.jdt.annotation.Nullable String deviceModel;
 }

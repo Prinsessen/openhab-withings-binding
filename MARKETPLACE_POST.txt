@@ -4,7 +4,7 @@
 | type | binding |
 | author | Nanna Agesen |
 | version range | \[5.0.0;6.0.0) |
-| download | [org.openhab.binding.withings-5.2.0-SNAPSHOT.jar](https://github.com/Prinsessen/openhab-withings-binding/releases/download/v1.2.0/org.openhab.binding.withings-5.2.0-SNAPSHOT.jar) |
+| download | [org.openhab.binding.withings-5.2.0-SNAPSHOT.jar](https://github.com/Prinsessen/openhab-withings-binding/releases/download/v1.3.0/org.openhab.binding.withings-5.2.0-SNAPSHOT.jar) |
 
 # Withings Health Binding
 
@@ -123,7 +123,7 @@ A comprehensive openHAB binding for **Withings** health devices — smart scales
 | `device#battery` | String | Battery level (`high` / `medium` / `low`) |
 | `device#model` | String | Device model name (e.g. *ScanWatch*, *Body+*) |
 | `device#lastSession` | DateTime | Timestamp of last recorded session |
-
+> **Multiple devices?** If you have more than one Withings device (e.g. a ScanWatch and a Body+ scale), add `deviceModel="ScanWatch"` to your person thing configuration to pin the device status channels to a specific device. Without this, the most recently synced device is shown. *(new in v1.3.0)*
 **Devices:** All Withings devices
 
 ## Quick Start
@@ -163,6 +163,8 @@ String        Withings_Model          "Device [%s]"                             
 
 > **Upgrading from v1.1.x?** This version adds the `user.info` and `user.sleepevents` scopes. You must re-authorize to grant the new permissions — open `/withings` and click Authorize again.
 
+> **Upgrading from v1.2.x?** No re-authorization needed. Optionally add `deviceModel="YourDeviceName"` to your person thing if you have multiple Withings devices.
+
 ## Prerequisites
 
 * [Withings Developer Account](https://developer.withings.com/) with registered application
@@ -172,8 +174,8 @@ String        Withings_Model          "Device [%s]"                             
 
 ## Resources
 
-* **Download JAR:** [org.openhab.binding.withings-5.2.0-SNAPSHOT.jar](https://github.com/Prinsessen/openhab-withings-binding/releases/download/v1.2.0/org.openhab.binding.withings-5.2.0-SNAPSHOT.jar) (47.4 KB)
+* **Download JAR:** [org.openhab.binding.withings-5.2.0-SNAPSHOT.jar](https://github.com/Prinsessen/openhab-withings-binding/releases/download/v1.3.0/org.openhab.binding.withings-5.2.0-SNAPSHOT.jar) (49 KB)
 * **Source Code:** [github.com/Prinsessen/openhab-withings-binding](https://github.com/Prinsessen/openhab-withings-binding)
 * **Full Documentation:** [README.md](https://github.com/Prinsessen/openhab-withings-binding/blob/main/README.md)
-* **Changelog:** [v1.2.0 — Device channels, extended sleep & activity](https://github.com/Prinsessen/openhab-withings-binding/releases/tag/v1.2.0)
+* **Changelog:** [v1.3.0 — Device model filter for multi-device accounts](https://github.com/Prinsessen/openhab-withings-binding/releases/tag/v1.3.0)
 * **License:** EPL-2.0

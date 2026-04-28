@@ -82,6 +82,12 @@
 				<description>Interval in minutes to poll for device info (battery, model, last session).</description>
 				<default>60</default>
 			</parameter>
+			<parameter name="deviceModel" type="text" required="false">
+				<label>Device Model Filter</label>
+				<description>Optional: only show device status (battery, model, last session) for the device whose model name
+					contains this text (case-insensitive). Example: "ScanWatch", "Body+", "BPM Connect". Leave empty to use the most
+					recently synced device.</description>
+			</parameter>
 		</config-description>
 	</thing-type>
 

@@ -136,6 +136,7 @@ Each person thing represents an individual Withings user.
 | `pollingIntervalActivity` | integer | No | 30 | Polling interval for activity data (minutes) |
 | `pollingIntervalSleep` | integer | No | 60 | Polling interval for sleep data (minutes) |
 | `pollingIntervalDevice` | integer | No | 60 | Polling interval for device status (minutes) |
+| `deviceModel` | text | No | — | Filter device status channels to a specific device model. If empty, the most recently synced device is used. Example: `ScanWatch`, `Body+`, `BPM Connect` |
 
 **Thing file example:**
 
