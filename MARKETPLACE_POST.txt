@@ -4,7 +4,7 @@
 | type | binding |
 | author | Nanna Agesen |
 | version range | \[5.0.0;6.0.0) |
-| download | [org.openhab.binding.withings-5.2.0-SNAPSHOT.jar](https://github.com/Prinsessen/openhab-withings-binding/releases/download/v2.0.0/org.openhab.binding.withings-5.2.0-SNAPSHOT.jar) |
+| download | [org.openhab.binding.withings-5.2.0-SNAPSHOT.jar](https://github.com/Prinsessen/openhab-withings-binding/releases/download/v3.0.0/org.openhab.binding.withings-5.2.0-SNAPSHOT.jar) |
 
 # Withings Health Binding
 
@@ -12,10 +12,10 @@ A comprehensive openHAB binding for **Withings** health devices — smart scales
 
 ## Features
 
-* **Body Composition** — Weight, fat ratio, fat mass, fat-free mass, muscle mass, bone mass, hydration from WiFi smart scales
-* **Cardiovascular Monitoring** — Heart rate, systolic/diastolic blood pressure, SpO2, pulse wave velocity, VO2 max, vascular age, body temperature
+* **Body Composition** — Weight, fat ratio, fat mass, fat-free mass, muscle mass, bone mass, hydration, wrist skin temperature (ScanWatch 2)
+* **Cardiovascular Monitoring** — Heart rate, systolic/diastolic blood pressure, SpO2, pulse wave velocity, VO2 max, vascular age, body temperature, **ECG Afib classification** (ScanWatch 2)
 * **Activity Tracking** — Steps, distance, calories, elevation, light/moderate/intense activity durations, active duration, heart rate zones (0–3)
-* **Sleep Analysis** — Total sleep, deep/light/REM duration, wakeup count, sleep score, snoring episodes, breathing disturbances, heart rate and respiration during sleep
+* **Sleep Analysis** — Total sleep, deep/light/REM duration, wakeup count, sleep score, snoring episodes, breathing disturbances, heart rate and respiration during sleep, **HRV (RMSSD, SDNN, quality)** and **skin temperature** from sleep summary (ScanWatch 2)
 * **Device Status** — Battery level, model name, last session timestamp — per individual physical device
 * **Device Auto-Discovery** — Physical devices appear in the openHAB Inbox under the person bridge
 * **OAuth2 Web Authorization** — Built-in servlet at `/withings` for browser-based authorization (modeled after HomeConnect binding)
@@ -62,6 +62,7 @@ Full step-by-step migration guide: [README — Upgrading from v1.x](https://gith
 | `body#boneMass` | Number:Mass | Bone mass (kg) |
 | `body#hydration` | Number:Mass | Body hydration (kg) |
 | `body#lastMeasurement` | DateTime | Timestamp of most recent measurement |
+| `body#skinTemperature` | Number:Temperature | Wrist skin temperature from sleep summary (°C) *(ScanWatch 2, v3.0.0)* |
 
 **Devices:** Body, Body+, Body Comp, Body Scan
 
@@ -77,6 +78,7 @@ Full step-by-step migration guide: [README — Upgrading from v1.x](https://gith
 | `cardiovascular#vascularAge` | Number | Estimated vascular age (years) |
 | `cardiovascular#spo2` | Number | Blood oxygen saturation (%) |
 | `cardiovascular#temperature` | Number:Temperature | Body temperature (°C) |
+| `cardiovascular#afib` | Number | ECG Afib classification: 0=sinus rhythm, 1=Afib detected, 2=inconclusive *(ScanWatch 2, v3.0.0)* |
 
 **Devices:** BPM Connect, BPM Core, Body Scan, ScanWatch, Thermo
 
@@ -131,6 +133,10 @@ Full step-by-step migration guide: [README — Upgrading from v1.x](https://gith
 | `sleep#sleepRrAverage` | Number | Average respiration rate (brpm) |
 | `sleep#sleepRrMin` | Number | Min respiration rate (brpm) |
 | `sleep#sleepRrMax` | Number | Max respiration rate (brpm) |
+| `sleep#sleepHrvRmssd` | Number | HRV RMSSD (ms) *(ScanWatch 2, v3.0.0)* |
+| `sleep#sleepHrvSdnn` | Number | HRV SDNN (ms) *(ScanWatch 2, v3.0.0)* |
+| `sleep#sleepHrvQuality` | Number | HRV quality score *(ScanWatch 2, v3.0.0)* |
+| `sleep#sleepSkinTemperature` | Number:Temperature | Wrist skin temperature from sleep (°C) *(ScanWatch 2, v3.0.0)* |
 
 **Devices:** Sleep Analyzer, ScanWatch, Steel HR
 
@@ -197,6 +203,20 @@ DateTime      Withings_Last_Sync      "Last Sync [%1$td-%1$tm-%1$tY]"           
 
 > **Upgrading from v1.x?** See the [migration guide](https://github.com/Prinsessen/openhab-withings-binding/blob/main/README.md#upgrading-from-v1x) in the README. **No re-authorization needed** — existing tokens remain valid. Change `Thing person` → `Bridge person` in your `.things` file and update device channel items to the new `withings:device` UIDs.
 
+## What's New in v3.0.0
+
+| New Channel | Type | Device |
+|----|----|----|
+| `cardiovascular#afib` | Number | ECG Afib classification (0/1/2) — ScanWatch 2 |
+| `sleep#sleepHrvRmssd` | Number | HRV RMSSD during sleep (ms) — ScanWatch 2 |
+| `sleep#sleepHrvSdnn` | Number | HRV SDNN during sleep (ms) — ScanWatch 2 |
+| `sleep#sleepHrvQuality` | Number | HRV quality score — ScanWatch 2 |
+| `body#skinTemperature` | Number:Temperature | Wrist skin temperature from sleep summary (\u00b0C) — ScanWatch 2 |
+
+See the [full changelog](https://github.com/Prinsessen/openhab-withings-binding/releases/tag/v3.0.0) on GitHub.
+
+---
+
 ## Prerequisites
 
 * [Withings Developer Account](https://developer.withings.com/) with registered application
@@ -206,8 +226,8 @@ DateTime      Withings_Last_Sync      "Last Sync [%1$td-%1$tm-%1$tY]"           
 
 ## Resources
 
-* **Download JAR:** [org.openhab.binding.withings-5.2.0-SNAPSHOT.jar](https://github.com/Prinsessen/openhab-withings-binding/releases/download/v2.0.0/org.openhab.binding.withings-5.2.0-SNAPSHOT.jar)
+* **Download JAR:** [org.openhab.binding.withings-5.2.0-SNAPSHOT.jar](https://github.com/Prinsessen/openhab-withings-binding/releases/download/v3.0.0/org.openhab.binding.withings-5.2.0-SNAPSHOT.jar)
 * **Source Code:** [github.com/Prinsessen/openhab-withings-binding](https://github.com/Prinsessen/openhab-withings-binding)
 * **Full Documentation:** [README.md](https://github.com/Prinsessen/openhab-withings-binding/blob/main/README.md)
-* **Changelog:** [v2.0.0 — Device Discovery Architecture](https://github.com/Prinsessen/openhab-withings-binding/releases/tag/v2.0.0)
+* **Changelog:** [v3.0.0 — ECG Afib, HRV, Skin Temperature](https://github.com/Prinsessen/openhab-withings-binding/releases/tag/v3.0.0)
 * **License:** EPL-2.0

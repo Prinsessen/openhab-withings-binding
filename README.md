@@ -11,7 +11,9 @@ A comprehensive openHAB binding for **Withings** health devices — smart scales
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Thing Architecture (v2.0)](#thing-architecture-v20)
+- [What's New in v3.0](#whats-new-in-v30)
 - [Configuration](#configuration)
+
   - [Withings Developer Application](#withings-developer-application)
   - [Account Bridge](#account-bridge)
   - [Person Bridge](#person-bridge)
@@ -34,10 +36,10 @@ A comprehensive openHAB binding for **Withings** health devices — smart scales
 
 ## Features
 
-- **Body composition** — Weight, fat ratio, fat mass, fat-free mass, muscle mass, bone mass, hydration
-- **Cardiovascular monitoring** — Heart rate, blood pressure, SpO2, pulse wave velocity, VO2 max, vascular age, body temperature
+- **Body composition** — Weight, fat ratio, fat mass, fat-free mass, muscle mass, bone mass, hydration, wrist skin temperature
+- **Cardiovascular monitoring** — Heart rate, blood pressure, SpO2, pulse wave velocity, VO2 max, vascular age, body temperature, **ECG Afib classification** (ScanWatch 2)
 - **Activity tracking** — Steps, distance, calories, elevation, heart rate zones 0–3, active duration
-- **Sleep analysis** — Total sleep, deep/light/REM stages, wakeup count, sleep score, efficiency, latency, snoring, breathing disturbances, night HR and respiration rate
+- **Sleep analysis** — Total sleep, deep/light/REM stages, wakeup count, sleep score, efficiency, latency, snoring, breathing disturbances, night HR and respiration rate, **HRV (RMSSD/SDNN/quality)** and **skin temperature** from sleep summary
 - **Per-device status** — Battery level, device model name, last session timestamp — one `device` thing per physical Withings device
 - **Auto-discovery** — Physical devices discovered via Inbox when scanning the person bridge
 - **OAuth2 web authorization** — Built-in servlet at `/withings` for browser-based authorization
@@ -55,9 +57,24 @@ A comprehensive openHAB binding for **Withings** health devices — smart scales
 | **Blood Pressure Monitors** (BPM, BPM Connect, BPM Core) | Systolic/diastolic blood pressure, heart rate |
 | **Activity Trackers** (ScanWatch, Steel HR, Move) | Steps, distance, calories, elevation, heart rate zones, active duration |
 | **Sleep Monitors** (Sleep Analyzer, Sleep) | Sleep stages, score, snoring, heart/respiration rate during sleep |
+| **ScanWatch 2 / ScanWatch Nova** | All activity + sleep + skin temperature (sleep summary) + HRV (RMSSD, SDNN, quality) + ECG Afib classification |
 | **Thermometers** (Thermo) | Body temperature |
 
 > Channels for data not supported by your device will remain `UNDEF` — this is harmless.
+
+---
+
+## What's New in v3.0
+
+| Feature | Channel | Device |
+|---|---|---|
+| ECG Afib classification | `cardiovascular#afib` | ScanWatch 2, ScanWatch Nova |
+| HRV — RMSSD | `sleep#sleepHrvRmssd` | ScanWatch 2, ScanWatch Nova |
+| HRV — SDNN | `sleep#sleepHrvSdnn` | ScanWatch 2, ScanWatch Nova |
+| HRV quality score | `sleep#sleepHrvQuality` | ScanWatch 2, ScanWatch Nova |
+| Wrist skin temperature | `body#skinTemperature` | ScanWatch 2 |
+
+Skin temperature is now retrieved from the sleep summary API (7-day rolling window) instead of the intraday API — more reliable and no extra API call.
 
 ---
 
@@ -217,6 +234,7 @@ You can also define devices manually using the `deviceId` from the discovery res
 | `hydration` | `Number:Mass` | Hydration (kg) |
 | `boneMass` | `Number:Mass` | Bone mass (kg) |
 | `lastMeasurement` | `DateTime` | Timestamp of most recent measurement |
+| `skinTemperature` | `Number:Temperature` | Wrist skin temperature from sleep summary (°C) *(ScanWatch 2, new in v3.0.0)* |
 
 #### Cardiovascular — group `cardiovascular`
 
@@ -230,6 +248,7 @@ You can also define devices manually using the `deviceId` from the discovery res
 | `vascularAge` | `Number` | Estimated vascular age (years) |
 | `spo2` | `Number` | Blood oxygen saturation (%) |
 | `temperature` | `Number:Temperature` | Body temperature (°C) |
+| `afib` | `Number` | ECG Afib classification: 0 = sinus rhythm, 1 = Afib detected, 2 = inconclusive *(ScanWatch 2, new in v3.0.0)* |
 
 #### Activity — group `activity`
 
@@ -277,6 +296,10 @@ You can also define devices manually using the `deviceId` from the discovery res
 | `sleepRrAverage` | `Number` | Average respiration rate (brpm) |
 | `sleepRrMin` | `Number` | Minimum respiration rate (brpm) |
 | `sleepRrMax` | `Number` | Maximum respiration rate (brpm) |
+| `sleepHrvRmssd` | `Number` | HRV — RMSSD during sleep (ms) *(ScanWatch 2, new in v3.0.0)* |
+| `sleepHrvSdnn` | `Number` | HRV — SDNN during sleep (ms) *(ScanWatch 2, new in v3.0.0)* |
+| `sleepHrvQuality` | `Number` | HRV quality score *(ScanWatch 2, new in v3.0.0)* |
+| `sleepSkinTemperature` | `Number:Temperature` | Wrist skin temperature from sleep summary (°C) — also updated to `body#skinTemperature` *(ScanWatch 2, new in v3.0.0)* |
 
 ### Device Thing Channels
 
@@ -462,6 +485,17 @@ log:set DEBUG org.openhab.binding.withings
 ---
 
 ## Changelog
+
+### v3.0.0 — May 2026 *(current)*
+
+- **New:** `cardiovascular#afib` — ECG Afib classification from Heart v2 API (0 = sinus rhythm, 1 = Afib detected, 2 = inconclusive) — ScanWatch 2 / ScanWatch Nova
+- **New:** `sleep#sleepHrvRmssd`, `sleep#sleepHrvSdnn`, `sleep#sleepHrvQuality` — HRV metrics from sleep summary — ScanWatch 2 / ScanWatch Nova
+- **New:** `body#skinTemperature` — wrist skin temperature from sleep summary (replaces intraday API call) — ScanWatch 2
+- **Changed:** `getSleepSummary` now uses a 7-day rolling window and expanded `data_fields` to capture all new metrics
+- **Changed:** Separate `getLatestSkinTemperature()` intraday call removed — skin temperature now comes from sleep summary
+- **New:** Heart polling job — polls Heart v2 API on the same interval as sleep, with 30 s offset
+
+---
 
 ### v2.0.0 — April 2026 ⚠️ BREAKING CHANGE
 
