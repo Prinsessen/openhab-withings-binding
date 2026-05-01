@@ -25,6 +25,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
@@ -37,6 +38,9 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 /**
  * The {@link WithingsApiClient} handles all communication with the Withings Cloud API.
@@ -185,6 +189,62 @@ public class WithingsApiClient {
             return response;
         } catch (Exception e) {
             logger.error("Error fetching measurements: {}", e.getMessage(), e);
+            return null;
+        }
+    }
+
+    /**
+     * Fetches the most recent skin temperature from intraday activity data.
+     * Used for devices like ScanWatch 2 that report temperature via getintradayactivity
+     * rather than as a classical body measurement (getmeas types 12/71).
+     *
+     * @return skin temperature in °C, or null if not available
+     */
+    public @Nullable Double getLatestSkinTemperature() {
+        if (!ensureValidToken()) {
+            logger.warn("Cannot fetch intraday skin temperature - no valid token");
+            return null;
+        }
+
+        long enddate = System.currentTimeMillis() / 1000;
+        long startdate = enddate - 86400; // last 24 hours
+
+        Map<String, String> params = new HashMap<>();
+        params.put("action", "getintradayactivity");
+        params.put("startdate", String.valueOf(startdate));
+        params.put("enddate", String.valueOf(enddate));
+        params.put("data_fields", "skin_temp");
+
+        try {
+            String responseBody = postForm(API_MEASURE_V2_URL, params, true);
+            logger.trace("Withings intraday skin_temp response: {}", responseBody);
+            JsonObject root = JsonParser.parseString(responseBody).getAsJsonObject();
+            if (root.get("status").getAsInt() != 0) {
+                logger.debug("getintradayactivity returned non-zero status — scope may be missing");
+                return null;
+            }
+            JsonObject body = root.getAsJsonObject("body");
+            if (body == null || !body.has("series")) {
+                return null;
+            }
+            JsonObject series = body.getAsJsonObject("series");
+            double latestTemp = Double.NaN;
+            long latestTs = 0;
+            for (Map.Entry<String, JsonElement> entry : series.entrySet()) {
+                long ts = Long.parseLong(entry.getKey());
+                JsonObject data = entry.getValue().getAsJsonObject();
+                if (data.has("skin_temp") && ts > latestTs) {
+                    latestTs = ts;
+                    latestTemp = data.get("skin_temp").getAsDouble();
+                }
+            }
+            if (latestTs > 0) {
+                logger.debug("Intraday skin_temp: {} \u00b0C at ts={}", latestTemp, latestTs);
+                return latestTemp;
+            }
+            return null;
+        } catch (Exception e) {
+            logger.debug("Error fetching intraday skin temperature: {}", e.getMessage());
             return null;
         }
     }

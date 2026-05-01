@@ -438,6 +438,16 @@ public class WithingsPersonHandler extends BaseBridgeHandler {
             logger.debug("Withings activity updated: {} steps, {}m distance, {} cal", activity.steps, activity.distance,
                     activity.calories);
 
+            // Skin temperature via intraday — ScanWatch 2 (and possibly other devices) report
+            // temperature through getintradayactivity rather than as a classical body measurement.
+            // This supplements the existing type 12/71 handling in pollBodyMeasurements.
+            Double skinTemp = client.getLatestSkinTemperature();
+            if (skinTemp != null && !Double.isNaN(skinTemp)) {
+                updateState(CHANNEL_GROUP_CARDIOVASCULAR + "#" + CHANNEL_BODY_TEMPERATURE,
+                        new QuantityType<Temperature>(skinTemp, SIUnits.CELSIUS));
+                logger.debug("Updated skin temperature from intraday: {} \u00b0C", skinTemp);
+            }
+
         } catch (Exception e) {
             logger.warn("Error polling activity: {}", e.getMessage());
         }
