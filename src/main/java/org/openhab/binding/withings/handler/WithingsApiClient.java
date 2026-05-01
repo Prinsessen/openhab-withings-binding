@@ -225,8 +225,13 @@ public class WithingsApiClient {
                 logger.debug("sleep getsummary returned non-zero status: {}", responseBody);
                 return null;
             }
-            JsonObject body = root.getAsJsonObject("body");
-            if (body == null || !body.has("series")) {
+            JsonElement bodyEl = root.get("body");
+            if (bodyEl == null || !bodyEl.isJsonObject()) {
+                // Withings returns "body": [] when no sleep data is available
+                return null;
+            }
+            JsonObject body = bodyEl.getAsJsonObject();
+            if (!body.has("series")) {
                 return null;
             }
             JsonArray series = body.getAsJsonArray("series");
