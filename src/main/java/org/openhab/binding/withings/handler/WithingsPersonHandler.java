@@ -359,6 +359,7 @@ public class WithingsPersonHandler extends BaseBridgeHandler {
                 updateState(CHANNEL_GROUP_CARDIOVASCULAR + "#" + CHANNEL_SPO2, new DecimalType(spo2Pct));
                 break;
             case MEASURE_TYPE_BODY_TEMPERATURE:
+            case MEASURE_TYPE_SKIN_TEMPERATURE:
             case MEASURE_TYPE_TEMPERATURE:
                 updateState(CHANNEL_GROUP_CARDIOVASCULAR + "#" + CHANNEL_BODY_TEMPERATURE,
                         new QuantityType<Temperature>(value, SIUnits.CELSIUS));

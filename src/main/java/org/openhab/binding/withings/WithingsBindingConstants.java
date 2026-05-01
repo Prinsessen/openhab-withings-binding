@@ -32,8 +32,14 @@ public class WithingsBindingConstants {
 
     // Thing Types
     public static final ThingTypeUID THING_TYPE_PERSON = new ThingTypeUID(BINDING_ID, "person");
+    public static final ThingTypeUID THING_TYPE_DEVICE = new ThingTypeUID(BINDING_ID, "device");
 
-    public static final Set<ThingTypeUID> SUPPORTED_THING_TYPES = Set.of(THING_TYPE_ACCOUNT, THING_TYPE_PERSON);
+    public static final Set<ThingTypeUID> SUPPORTED_THING_TYPES = Set.of(THING_TYPE_ACCOUNT, THING_TYPE_PERSON,
+            THING_TYPE_DEVICE);
+
+    // Thing Properties
+    public static final String PROPERTY_DEVICE_ID = "deviceId";
+    public static final String PROPERTY_DEVICE_MODEL_NAME = "deviceModelName";
 
     // Channel Group IDs
     public static final String CHANNEL_GROUP_BODY = "body";
@@ -136,6 +142,7 @@ public class WithingsBindingConstants {
     public static final int MEASURE_TYPE_TEMPERATURE = 12;
     public static final int MEASURE_TYPE_SPO2 = 54;
     public static final int MEASURE_TYPE_BODY_TEMPERATURE = 71;
+    public static final int MEASURE_TYPE_SKIN_TEMPERATURE = 73;
     public static final int MEASURE_TYPE_MUSCLE_MASS = 76;
     public static final int MEASURE_TYPE_HYDRATION = 77;
     public static final int MEASURE_TYPE_BONE_MASS = 88;
@@ -144,5 +151,5 @@ public class WithingsBindingConstants {
     public static final int MEASURE_TYPE_VASCULAR_AGE = 155;
 
     // All measure types we want to fetch
-    public static final String ALL_MEASURE_TYPES = "1,5,6,8,9,10,11,12,54,71,76,77,88,91,123,155";
+    public static final String ALL_MEASURE_TYPES = "1,5,6,8,9,10,11,12,54,71,73,76,77,88,91,123,155";
 }
