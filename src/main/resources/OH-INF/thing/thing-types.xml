@@ -122,7 +122,7 @@
 	<!-- ==================== Channel Group: Body Measurements ==================== -->
 	<channel-group-type id="body-measurements">
 		<label>Body Measurements</label>
-		<description>Body composition data from Withings scales</description>
+		<description>Body composition and temperature data from Withings scales and watches</description>
 		<channels>
 			<channel id="weight" typeId="weight"/>
 			<channel id="fatRatio" typeId="fat-ratio"/>
@@ -132,6 +132,8 @@
 			<channel id="hydration" typeId="hydration"/>
 			<channel id="boneMass" typeId="bone-mass"/>
 			<channel id="lastMeasurement" typeId="last-measurement"/>
+			<channel id="temperature" typeId="body-temperature"/>
+			<channel id="skinTemperature" typeId="skin-temperature"/>
 		</channels>
 	</channel-group-type>
 
@@ -147,7 +149,6 @@
 			<channel id="vo2Max" typeId="vo2-max"/>
 			<channel id="vascularAge" typeId="vascular-age"/>
 			<channel id="spo2" typeId="spo2"/>
-			<channel id="temperature" typeId="body-temperature"/>
 		</channels>
 	</channel-group-type>
 
@@ -218,7 +219,6 @@
 			<channel id="model" typeId="device-model"/>
 		</channels>
 	</channel-group-type>
-
 	<!-- ==================== Channel Types: Body ==================== -->
 	<channel-type id="weight">
 		<item-type>Number:Mass</item-type>
@@ -329,7 +329,14 @@
 	<channel-type id="body-temperature">
 		<item-type>Number:Temperature</item-type>
 		<label>Body Temperature</label>
-		<description>Body temperature measurement</description>
+		<description>Body temperature from Withings Thermo or ScanWatch Reflect (types 12/71)</description>
+		<state readOnly="true" pattern="%.1f %unit%"/>
+	</channel-type>
+
+	<channel-type id="skin-temperature">
+		<item-type>Number:Temperature</item-type>
+		<label>Skin Temperature</label>
+		<description>Wrist skin temperature from ScanWatch 2 (type 73 / intraday API)</description>
 		<state readOnly="true" pattern="%.1f %unit%"/>
 	</channel-type>
 

@@ -207,7 +207,7 @@ public class WithingsApiClient {
         }
 
         long enddate = System.currentTimeMillis() / 1000;
-        long startdate = enddate - 86400; // last 24 hours
+        long startdate = enddate - (86400 * 7); // last 7 days (skin_temp only measured during sleep)
 
         Map<String, String> params = new HashMap<>();
         params.put("action", "getintradayactivity");

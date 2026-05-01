@@ -67,6 +67,7 @@ public class WithingsBindingConstants {
     public static final String CHANNEL_VASCULAR_AGE = "vascularAge";
     public static final String CHANNEL_SPO2 = "spo2";
     public static final String CHANNEL_BODY_TEMPERATURE = "temperature";
+    public static final String CHANNEL_SKIN_TEMPERATURE = "skinTemperature";
 
     // Device Channels
     public static final String CHANNEL_DEVICE_BATTERY = "battery";

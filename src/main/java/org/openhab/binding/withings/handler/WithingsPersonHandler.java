@@ -358,10 +358,13 @@ public class WithingsPersonHandler extends BaseBridgeHandler {
                         : value.setScale(1, RoundingMode.HALF_UP);
                 updateState(CHANNEL_GROUP_CARDIOVASCULAR + "#" + CHANNEL_SPO2, new DecimalType(spo2Pct));
                 break;
-            case MEASURE_TYPE_BODY_TEMPERATURE:
-            case MEASURE_TYPE_SKIN_TEMPERATURE:
-            case MEASURE_TYPE_TEMPERATURE:
-                updateState(CHANNEL_GROUP_CARDIOVASCULAR + "#" + CHANNEL_BODY_TEMPERATURE,
+            case MEASURE_TYPE_BODY_TEMPERATURE: // type 71 — ScanWatch Reflect sleep body temp
+            case MEASURE_TYPE_TEMPERATURE: // type 12 — Withings Thermo clinical thermometer
+                updateState(CHANNEL_GROUP_BODY + "#" + CHANNEL_BODY_TEMPERATURE,
+                        new QuantityType<Temperature>(value, SIUnits.CELSIUS));
+                break;
+            case MEASURE_TYPE_SKIN_TEMPERATURE: // type 73 — ScanWatch 2 wrist skin temp
+                updateState(CHANNEL_GROUP_BODY + "#" + CHANNEL_SKIN_TEMPERATURE,
                         new QuantityType<Temperature>(value, SIUnits.CELSIUS));
                 break;
             default:
@@ -444,7 +447,7 @@ public class WithingsPersonHandler extends BaseBridgeHandler {
             // This supplements the existing type 12/71 handling in pollBodyMeasurements.
             Double skinTemp = client.getLatestSkinTemperature();
             if (skinTemp != null && !Double.isNaN(skinTemp)) {
-                updateState(CHANNEL_GROUP_CARDIOVASCULAR + "#" + CHANNEL_BODY_TEMPERATURE,
+                updateState(CHANNEL_GROUP_BODY + "#" + CHANNEL_SKIN_TEMPERATURE,
                         new QuantityType<Temperature>(skinTemp, SIUnits.CELSIUS));
                 logger.debug("Updated skin temperature from intraday: {} \u00b0C", skinTemp);
             }
