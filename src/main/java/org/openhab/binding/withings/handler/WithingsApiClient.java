@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -194,57 +195,59 @@ public class WithingsApiClient {
     }
 
     /**
-     * Fetches the most recent skin temperature from intraday activity data.
-     * Used for devices like ScanWatch 2 that report temperature via getintradayactivity
-     * rather than as a classical body measurement (getmeas types 12/71).
+     * Fetches the most recent skin temperature from the sleep summary API.
+     * Used for devices like ScanWatch 2 that report skin temperature during sleep tracking.
+     * Uses v2/sleep getsummary with data_fields=skin_temperature.
      *
-     * @return skin temperature in °C, or null if not available
+     * @return skin temperature in \u00b0C, or null if not available
      */
     public @Nullable Double getLatestSkinTemperature() {
         if (!ensureValidToken()) {
-            logger.warn("Cannot fetch intraday skin temperature - no valid token");
+            logger.warn("Cannot fetch sleep summary skin temperature - no valid token");
             return null;
         }
 
-        long enddate = System.currentTimeMillis() / 1000;
-        long startdate = enddate - (86400 * 7); // last 7 days (skin_temp only measured during sleep)
+        // Query last 7 days by date (skin temp is a nightly sleep measurement)
+        java.time.LocalDate today = java.time.LocalDate.now();
+        java.time.LocalDate weekAgo = today.minusDays(7);
 
         Map<String, String> params = new HashMap<>();
-        params.put("action", "getintradayactivity");
-        params.put("startdate", String.valueOf(startdate));
-        params.put("enddate", String.valueOf(enddate));
-        params.put("data_fields", "skin_temp");
+        params.put("action", "getsummary");
+        params.put("startdateymd", weekAgo.toString());
+        params.put("enddateymd", today.toString());
+        params.put("data_fields", "skin_temperature");
 
         try {
-            String responseBody = postForm(API_MEASURE_V2_URL, params, true);
-            logger.trace("Withings intraday skin_temp response: {}", responseBody);
+            String responseBody = postForm("https://wbsapi.withings.net/v2/sleep", params, true);
+            logger.trace("Withings sleep summary skin_temperature response: {}", responseBody);
             JsonObject root = JsonParser.parseString(responseBody).getAsJsonObject();
             if (root.get("status").getAsInt() != 0) {
-                logger.debug("getintradayactivity returned non-zero status — scope may be missing");
+                logger.debug("sleep getsummary returned non-zero status: {}", responseBody);
                 return null;
             }
             JsonObject body = root.getAsJsonObject("body");
             if (body == null || !body.has("series")) {
                 return null;
             }
-            JsonObject series = body.getAsJsonObject("series");
+            JsonArray series = body.getAsJsonArray("series");
             double latestTemp = Double.NaN;
             long latestTs = 0;
-            for (Map.Entry<String, JsonElement> entry : series.entrySet()) {
-                long ts = Long.parseLong(entry.getKey());
-                JsonObject data = entry.getValue().getAsJsonObject();
-                if (data.has("skin_temp") && ts > latestTs) {
+            for (JsonElement el : series) {
+                JsonObject entry = el.getAsJsonObject();
+                long ts = entry.has("enddate") ? entry.get("enddate").getAsLong() : 0;
+                JsonObject data = entry.has("data") ? entry.getAsJsonObject("data") : null;
+                if (data != null && data.has("skin_temperature") && ts > latestTs) {
                     latestTs = ts;
-                    latestTemp = data.get("skin_temp").getAsDouble();
+                    latestTemp = data.get("skin_temperature").getAsDouble();
                 }
             }
             if (latestTs > 0) {
-                logger.debug("Intraday skin_temp: {} \u00b0C at ts={}", latestTemp, latestTs);
+                logger.debug("Sleep summary skin_temperature: {} \u00b0C at ts={}", latestTemp, latestTs);
                 return latestTemp;
             }
             return null;
         } catch (Exception e) {
-            logger.debug("Error fetching intraday skin temperature: {}", e.getMessage());
+            logger.debug("Error fetching sleep summary skin temperature: {}", e.getMessage());
             return null;
         }
     }
