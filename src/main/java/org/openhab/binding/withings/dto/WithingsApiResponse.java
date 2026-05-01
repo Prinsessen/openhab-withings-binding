@@ -133,6 +133,11 @@ public class WithingsApiResponse {
         public int wakeup_latency;
         public int wakeupcount;
         public int wakeupduration;
+        // Extended health data (v3)
+        public double skin_temperature;
+        public double rmssd;
+        public double sdnn_1;
+        public int hrv_quality;
     }
 
     public static class Device {

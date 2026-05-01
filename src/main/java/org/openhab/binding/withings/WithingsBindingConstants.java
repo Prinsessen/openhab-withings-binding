@@ -66,6 +66,7 @@ public class WithingsBindingConstants {
     public static final String CHANNEL_VO2_MAX = "vo2Max";
     public static final String CHANNEL_VASCULAR_AGE = "vascularAge";
     public static final String CHANNEL_SPO2 = "spo2";
+    public static final String CHANNEL_AFIB = "afib";
     public static final String CHANNEL_BODY_TEMPERATURE = "temperature";
     public static final String CHANNEL_SKIN_TEMPERATURE = "skinTemperature";
 
@@ -118,6 +119,10 @@ public class WithingsBindingConstants {
     public static final String CHANNEL_BREATHING_DISTURBANCES = "breathingDisturbances";
     public static final String CHANNEL_WAKEUP_LATENCY = "wakeupLatency";
     public static final String CHANNEL_SLEEP_LATENCY = "sleepLatency";
+    public static final String CHANNEL_SLEEP_SKIN_TEMPERATURE = "sleepSkinTemperature";
+    public static final String CHANNEL_SLEEP_HRV_RMSSD = "sleepHrvRmssd";
+    public static final String CHANNEL_SLEEP_HRV_SDNN = "sleepHrvSdnn";
+    public static final String CHANNEL_SLEEP_HRV_QUALITY = "sleepHrvQuality";
 
     // OAuth2 Scope
     public static final String OAUTH_SCOPE = "user.metrics,user.activity,user.sleepevents,user.info";

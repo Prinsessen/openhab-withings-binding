@@ -195,69 +195,6 @@ public class WithingsApiClient {
     }
 
     /**
-     * Fetches the most recent skin temperature from the sleep summary API.
-     * Used for devices like ScanWatch 2 that report skin temperature during sleep tracking.
-     * Uses v2/sleep getsummary with data_fields=skin_temperature.
-     *
-     * @return skin temperature in \u00b0C, or null if not available
-     */
-    public @Nullable Double getLatestSkinTemperature() {
-        if (!ensureValidToken()) {
-            logger.warn("Cannot fetch sleep summary skin temperature - no valid token");
-            return null;
-        }
-
-        // Query last 7 days by date (skin temp is a nightly sleep measurement)
-        java.time.LocalDate today = java.time.LocalDate.now();
-        java.time.LocalDate weekAgo = today.minusDays(7);
-
-        Map<String, String> params = new HashMap<>();
-        params.put("action", "getsummary");
-        params.put("startdateymd", weekAgo.toString());
-        params.put("enddateymd", today.toString());
-        params.put("data_fields", "skin_temperature");
-
-        try {
-            String responseBody = postForm("https://wbsapi.withings.net/v2/sleep", params, true);
-            logger.trace("Withings sleep summary skin_temperature response: {}", responseBody);
-            JsonObject root = JsonParser.parseString(responseBody).getAsJsonObject();
-            if (root.get("status").getAsInt() != 0) {
-                logger.debug("sleep getsummary returned non-zero status: {}", responseBody);
-                return null;
-            }
-            JsonElement bodyEl = root.get("body");
-            if (bodyEl == null || !bodyEl.isJsonObject()) {
-                // Withings returns "body": [] when no sleep data is available
-                return null;
-            }
-            JsonObject body = bodyEl.getAsJsonObject();
-            if (!body.has("series")) {
-                return null;
-            }
-            JsonArray series = body.getAsJsonArray("series");
-            double latestTemp = Double.NaN;
-            long latestTs = 0;
-            for (JsonElement el : series) {
-                JsonObject entry = el.getAsJsonObject();
-                long ts = entry.has("enddate") ? entry.get("enddate").getAsLong() : 0;
-                JsonObject data = entry.has("data") ? entry.getAsJsonObject("data") : null;
-                if (data != null && data.has("skin_temperature") && ts > latestTs) {
-                    latestTs = ts;
-                    latestTemp = data.get("skin_temperature").getAsDouble();
-                }
-            }
-            if (latestTs > 0) {
-                logger.debug("Sleep summary skin_temperature: {} \u00b0C at ts={}", latestTemp, latestTs);
-                return latestTemp;
-            }
-            return null;
-        } catch (Exception e) {
-            logger.debug("Error fetching sleep summary skin temperature: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    /**
      * Fetches daily activity data (steps, distance, calories, etc.).
      *
      * @param date the date to fetch activity for (format: yyyy-MM-dd), or null for today
@@ -295,9 +232,10 @@ public class WithingsApiClient {
     }
 
     /**
-     * Fetches sleep summary data.
+     * Fetches sleep summary data for the last 7 days.
+     * Uses a rolling 7-day window so nightly metrics (skin_temperature, HRV) are always available.
      *
-     * @param date the date to fetch sleep for (format: yyyy-MM-dd), or null for today
+     * @param date unused - kept for API compatibility; always fetches last 7 days
      * @return API response or null on error
      */
     public @Nullable WithingsApiResponse getSleepSummary(@Nullable String date) {
@@ -306,18 +244,21 @@ public class WithingsApiClient {
             return null;
         }
 
-        String targetDate = date != null ? date : LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
+        // Use a 7-day rolling window so nightly metrics like skin_temperature are captured
+        LocalDate today = LocalDate.now();
+        LocalDate weekAgo = today.minusDays(6);
 
         Map<String, String> params = new java.util.HashMap<>();
         params.put("action", "getsummary");
-        params.put("startdateymd", targetDate);
-        params.put("enddateymd", targetDate);
+        params.put("startdateymd", weekAgo.format(DateTimeFormatter.ISO_LOCAL_DATE));
+        params.put("enddateymd", today.format(DateTimeFormatter.ISO_LOCAL_DATE));
         params.put("data_fields",
                 "total_sleep_time,total_timeinbed,deepsleepduration,lightsleepduration,remsleepduration,"
                         + "wakeupduration,wakeupcount,durationtosleep,durationtowakeup,sleep_score,snoring,"
                         + "snoringepisodecount,nb_rem_episodes,night_events,out_of_bed_count,"
                         + "hr_average,hr_min,hr_max,rr_average,rr_min,rr_max,sleep_efficiency,"
-                        + "sleep_latency,wakeup_latency,breathing_disturbances_intensity");
+                        + "sleep_latency,wakeup_latency,breathing_disturbances_intensity,"
+                        + "skin_temperature,rmssd,sdnn_1,hrv_quality");
 
         try {
             String responseBody = postForm(API_SLEEP_V2_URL, params, true);
@@ -332,6 +273,66 @@ public class WithingsApiClient {
         } catch (Exception e) {
             logger.error("Error fetching sleep summary: {}", e.getMessage(), e);
             return null;
+        }
+    }
+
+    /**
+     * Fetches the most recent Afib classification from the Heart v2 - List API.
+     * Returns the afib value from the most recent ECG recording:
+     * 0 = sinus rhythm, 1 = afib detected, 2 = inconclusive/poor signal
+     *
+     * @return afib classification (0/1/2), or -1 if no ECG data available
+     */
+    public int getLatestAfib() {
+        if (!ensureValidToken()) {
+            logger.warn("Cannot fetch heart data - no valid token");
+            return -1;
+        }
+
+        // Query last 30 days — ECG recordings are infrequent
+        long endTs = Instant.now().getEpochSecond();
+        long startTs = endTs - (30L * 24 * 3600);
+
+        Map<String, String> params = new HashMap<>();
+        params.put("action", "list");
+        params.put("startdate", String.valueOf(startTs));
+        params.put("enddate", String.valueOf(endTs));
+
+        try {
+            String responseBody = postForm(API_HEART_V2_URL, params, true);
+            logger.trace("Withings heart list response: {}", responseBody);
+            JsonObject root = JsonParser.parseString(responseBody).getAsJsonObject();
+            if (root.get("status").getAsInt() != 0) {
+                logger.debug("Heart v2 list returned non-zero status: {}", responseBody);
+                return -1;
+            }
+            JsonElement bodyEl = root.get("body");
+            if (bodyEl == null || !bodyEl.isJsonObject()) {
+                return -1;
+            }
+            JsonElement seriesEl = bodyEl.getAsJsonObject().get("series");
+            if (seriesEl == null || !seriesEl.isJsonArray()) {
+                return -1;
+            }
+            JsonArray series = seriesEl.getAsJsonArray();
+            int latestAfib = -1;
+            long latestTs = 0;
+            for (JsonElement el : series) {
+                JsonObject entry = el.getAsJsonObject();
+                long ts = entry.has("timestamp") ? entry.get("timestamp").getAsLong() : 0;
+                JsonObject ecg = entry.has("ecg") ? entry.getAsJsonObject("ecg") : null;
+                if (ecg != null && ecg.has("afib") && ts > latestTs) {
+                    latestTs = ts;
+                    latestAfib = ecg.get("afib").getAsInt();
+                }
+            }
+            if (latestTs > 0) {
+                logger.debug("Heart v2 latest ECG afib={} at ts={}", latestAfib, latestTs);
+            }
+            return latestAfib;
+        } catch (Exception e) {
+            logger.debug("Error fetching heart ECG data: {}", e.getMessage());
+            return -1;
         }
     }
 

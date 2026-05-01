@@ -73,6 +73,7 @@ public class WithingsPersonHandler extends BaseBridgeHandler {
     private @Nullable ScheduledFuture<?> bodyPollingJob;
     private @Nullable ScheduledFuture<?> activityPollingJob;
     private @Nullable ScheduledFuture<?> sleepPollingJob;
+    private @Nullable ScheduledFuture<?> heartPollingJob;
     private @Nullable ScheduledFuture<?> devicePollingJob;
 
     // Initialize to 7 days ago to avoid loading entire measurement history on startup
@@ -173,8 +174,12 @@ public class WithingsPersonHandler extends BaseBridgeHandler {
         activityPollingJob = scheduler.scheduleWithFixedDelay(this::pollActivity, 15,
                 config.pollingIntervalActivity * 60L, TimeUnit.SECONDS);
 
-        // Sleep data
+        // Sleep data (includes HRV and skin temperature via sleep summary)
         sleepPollingJob = scheduler.scheduleWithFixedDelay(this::pollSleep, 25, config.pollingIntervalSleep * 60L,
+                TimeUnit.SECONDS);
+
+        // Heart/ECG data (Afib classification from Heart v2 API)
+        heartPollingJob = scheduler.scheduleWithFixedDelay(this::pollHeart, 30, config.pollingIntervalSleep * 60L,
                 TimeUnit.SECONDS);
 
         // Device info
@@ -197,6 +202,11 @@ public class WithingsPersonHandler extends BaseBridgeHandler {
         if (job != null) {
             job.cancel(true);
             sleepPollingJob = null;
+        }
+        job = heartPollingJob;
+        if (job != null) {
+            job.cancel(true);
+            heartPollingJob = null;
         }
         job = devicePollingJob;
         if (job != null) {
@@ -442,16 +452,6 @@ public class WithingsPersonHandler extends BaseBridgeHandler {
             logger.debug("Withings activity updated: {} steps, {}m distance, {} cal", activity.steps, activity.distance,
                     activity.calories);
 
-            // Skin temperature via intraday — ScanWatch 2 (and possibly other devices) report
-            // temperature through getintradayactivity rather than as a classical body measurement.
-            // This supplements the existing type 12/71 handling in pollBodyMeasurements.
-            Double skinTemp = client.getLatestSkinTemperature();
-            if (skinTemp != null && !Double.isNaN(skinTemp)) {
-                updateState(CHANNEL_GROUP_BODY + "#" + CHANNEL_SKIN_TEMPERATURE,
-                        new QuantityType<Temperature>(skinTemp, SIUnits.CELSIUS));
-                logger.debug("Updated skin temperature from intraday: {} \u00b0C", skinTemp);
-            }
-
         } catch (Exception e) {
             logger.warn("Error polling activity: {}", e.getMessage());
         }
@@ -567,11 +567,51 @@ public class WithingsPersonHandler extends BaseBridgeHandler {
                         new QuantityType<Time>(data.sleep_latency, Units.SECOND));
             }
 
-            logger.debug("Withings sleep updated: {}s total, score={}, {} wakeups", data.total_sleep_time,
-                    data.sleep_score, data.wakeupcount);
+            // HRV metrics (ScanWatch 2, ScanWatch Nova — measured during sleep)
+            if (data.rmssd > 0) {
+                updateState(CHANNEL_GROUP_SLEEP + "#" + CHANNEL_SLEEP_HRV_RMSSD, new DecimalType(data.rmssd));
+            }
+            if (data.sdnn_1 > 0) {
+                updateState(CHANNEL_GROUP_SLEEP + "#" + CHANNEL_SLEEP_HRV_SDNN, new DecimalType(data.sdnn_1));
+            }
+            if (data.hrv_quality > 0) {
+                updateState(CHANNEL_GROUP_SLEEP + "#" + CHANNEL_SLEEP_HRV_QUALITY, new DecimalType(data.hrv_quality));
+            }
+
+            // Skin temperature from sleep summary (ScanWatch 2 — replaces separate intraday call)
+            if (data.skin_temperature != 0) {
+                updateState(CHANNEL_GROUP_BODY + "#" + CHANNEL_SKIN_TEMPERATURE,
+                        new QuantityType<Temperature>(data.skin_temperature, SIUnits.CELSIUS));
+                logger.debug("Updated skin temperature from sleep summary: {} \u00b0C", data.skin_temperature);
+            }
+
+            logger.debug("Withings sleep updated: {}s total, score={}, {} wakeups, hrv_rmssd={}", data.total_sleep_time,
+                    data.sleep_score, data.wakeupcount, data.rmssd);
 
         } catch (Exception e) {
             logger.warn("Error polling sleep: {}", e.getMessage());
+        }
+    }
+
+    // ==================== Heart / ECG Data ====================
+
+    private void pollHeart() {
+        WithingsApiClient client = getApiClient();
+        if (client == null) {
+            logger.debug("Cannot poll heart data - no API client");
+            return;
+        }
+
+        try {
+            int afib = client.getLatestAfib();
+            if (afib >= 0) {
+                updateState(CHANNEL_GROUP_CARDIOVASCULAR + "#" + CHANNEL_AFIB, new DecimalType(afib));
+                logger.debug("Withings ECG afib classification: {} (0=sinus, 1=afib, 2=inconclusive)", afib);
+            } else {
+                logger.debug("Withings ECG: no recent recordings in last 30 days");
+            }
+        } catch (Exception e) {
+            logger.warn("Error polling heart data: {}", e.getMessage());
         }
     }
 
