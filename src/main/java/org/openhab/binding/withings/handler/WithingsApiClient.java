@@ -260,15 +260,22 @@ public class WithingsApiClient {
                         + "sleep_latency,wakeup_latency,breathing_disturbances_intensity,"
                         + "skin_temperature,rmssd,sdnn_1,hrv_quality");
 
+        logger.debug(
+                "getSleepSummary: querying {} to {} with data_fields: skin_temperature,rmssd,sdnn_1,hrv_quality,...",
+                weekAgo, today);
+
         try {
             String responseBody = postForm(API_SLEEP_V2_URL, params, true);
+            logger.debug("getSleepSummary raw response: {}", responseBody);
             WithingsApiResponse response = gson.fromJson(responseBody, WithingsApiResponse.class);
 
             if (response == null || response.status != 0) {
                 int status = response != null ? response.status : -1;
-                logger.debug("getSleepSummary returned status: {} (may require user.activity scope)", status);
+                logger.warn("getSleepSummary returned status {} — full response: {}", status, responseBody);
                 return null;
             }
+            int seriesCount = (response.body != null && response.body.series != null) ? response.body.series.size() : 0;
+            logger.debug("getSleepSummary OK: {} series entries", seriesCount);
             return response;
         } catch (Exception e) {
             logger.error("Error fetching sleep summary: {}", e.getMessage(), e);

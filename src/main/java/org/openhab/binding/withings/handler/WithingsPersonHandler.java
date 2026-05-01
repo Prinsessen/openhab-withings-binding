@@ -482,8 +482,13 @@ public class WithingsPersonHandler extends BaseBridgeHandler {
             SleepSummary summary = series.get(series.size() - 1);
             SleepData data = summary.data;
             if (data == null) {
+                logger.warn("Withings sleep: series entry has null data object");
                 return;
             }
+            logger.debug(
+                    "Withings sleep raw fields: total_sleep={}, score={}, rmssd={}, sdnn_1={}, hrv_quality={}, skin_temp={}",
+                    data.total_sleep_time, data.sleep_score, data.rmssd, data.sdnn_1, data.hrv_quality,
+                    data.skin_temperature);
 
             // Sleep durations (API returns seconds)
             updateState(CHANNEL_GROUP_SLEEP + "#" + CHANNEL_TOTAL_SLEEP_TIME,
@@ -585,11 +590,11 @@ public class WithingsPersonHandler extends BaseBridgeHandler {
                 logger.debug("Updated skin temperature from sleep summary: {} \u00b0C", data.skin_temperature);
             }
 
-            logger.debug("Withings sleep updated: {}s total, score={}, {} wakeups, hrv_rmssd={}", data.total_sleep_time,
-                    data.sleep_score, data.wakeupcount, data.rmssd);
+            logger.debug("Withings sleep updated: {}s total, score={}, {} wakeups, hrv_rmssd={}, skin_temp={}",
+                    data.total_sleep_time, data.sleep_score, data.wakeupcount, data.rmssd, data.skin_temperature);
 
         } catch (Exception e) {
-            logger.warn("Error polling sleep: {}", e.getMessage());
+            logger.warn("Error polling sleep: {}", e.getMessage(), e);
         }
     }
 
