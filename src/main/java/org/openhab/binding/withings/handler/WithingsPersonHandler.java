@@ -244,8 +244,10 @@ public class WithingsPersonHandler extends BaseBridgeHandler {
             int skippedGroups = 0;
 
             for (MeasureGroup group : groups) {
-                if (group.category != 1) {
-                    continue; // Skip non-real measures
+                if (group.category != 1 && group.category != 2) {
+                    logger.debug("Skipping measure group date={} category={} attrib={} (not category 1 or 2)",
+                            group.date, group.category, group.attrib);
+                    continue; // Skip non-real measures (category 1=device, 2=manual/objective)
                 }
 
                 // Filter by userId if configured (skip other people's measurements)
@@ -261,6 +263,8 @@ public class WithingsPersonHandler extends BaseBridgeHandler {
                 }
 
                 for (Measure measure : measures) {
+                    logger.debug("Received measure type={} value={} unit={} (group date={} category={} attrib={})",
+                            measure.type, measure.value, measure.unit, group.date, group.category, group.attrib);
                     Long prev = latestTimestamps.get(measure.type);
                     if (prev == null || group.date > prev) {
                         BigDecimal realValue = BigDecimal.valueOf(measure.value).scaleByPowerOfTen(measure.unit);

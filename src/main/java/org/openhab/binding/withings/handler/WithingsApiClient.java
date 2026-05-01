@@ -162,7 +162,8 @@ public class WithingsApiClient {
         Map<String, String> params = new java.util.HashMap<>();
         params.put("action", "getmeas");
         params.put("meastypes", ALL_MEASURE_TYPES);
-        params.put("category", "1"); // Real measures only
+        // Note: Do not filter by category here — some devices (e.g. ScanWatch 2) report
+        // temperature measurements under a different category and they would be silently excluded.
 
         if (userId > 0) {
             params.put("userid", String.valueOf(userId));
