@@ -281,6 +281,13 @@
 		<state readOnly="true"/>
 	</channel-type>
 
+	<channel-type id="body-temperature">
+		<item-type>Number:Temperature</item-type>
+		<label>Body Temperature</label>
+		<description>Body temperature from ScanWatch Reflect (type 71 — sleep body temperature)</description>
+		<state readOnly="true" pattern="%.1f %unit%"/>
+	</channel-type>
+
 	<!-- ==================== Channel Types: Cardiovascular ==================== -->
 	<channel-type id="heart-pulse">
 		<item-type>Number</item-type>
