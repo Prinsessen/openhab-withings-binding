@@ -303,6 +303,16 @@ public class WithingsPersonHandler extends BaseBridgeHandler {
 
             logger.debug("Withings body updated: {} measure types from {} groups (accepted={}, skipped={})",
                     latestValues.size(), groups.size(), acceptedGroups, skippedGroups);
+
+            // Body temperature is NOT available via getmeas for ScanWatch 2.
+            // Use getintradayactivity with core_body_temperature instead.
+            double intradayTemp = client.getIntradayBodyTemperature();
+            if (!Double.isNaN(intradayTemp)) {
+                updateState(CHANNEL_GROUP_BODY + "#" + CHANNEL_BODY_TEMPERATURE,
+                        new QuantityType<Temperature>(intradayTemp, SIUnits.CELSIUS));
+                logger.debug("Body temperature from intraday API: {}°C", intradayTemp);
+            }
+
             updateStatus(ThingStatus.ONLINE);
         } catch (Exception e) {
             logger.error("Error polling body measurements: {}", e.getMessage(), e);

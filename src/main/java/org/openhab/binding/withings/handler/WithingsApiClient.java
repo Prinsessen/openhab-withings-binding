@@ -284,6 +284,82 @@ public class WithingsApiClient {
     }
 
     /**
+     * Fetches the most recent body (core) temperature from the intraday activity API.
+     * The getmeas API does NOT return body temperature for ScanWatch 2 — only the
+     * getintradayactivity endpoint with data_fields=core_body_temperature works.
+     *
+     * Response format: {"status":0,"body":{"series":{"<unix_ts>":{"core_body_temperature":36.47,...}}}}
+     *
+     * @return most recent core body temperature in °C, or Double.NaN if unavailable
+     */
+    public double getIntradayBodyTemperature() {
+        if (!ensureValidToken()) {
+            logger.warn("Cannot fetch intraday body temperature - no valid token");
+            return Double.NaN;
+        }
+
+        // Request last 24 hours — intraday data is stored per-measurement
+        long endTs = Instant.now().getEpochSecond();
+        long startTs = endTs - (24L * 3600);
+
+        Map<String, String> params = new HashMap<>();
+        params.put("action", "getintradayactivity");
+        params.put("startdate", String.valueOf(startTs));
+        params.put("enddate", String.valueOf(endTs));
+        params.put("data_fields", "core_body_temperature");
+
+        try {
+            String responseBody = postForm(API_MEASURE_V2_URL, params, true);
+            logger.debug("getIntradayBodyTemperature response: {}", responseBody);
+
+            JsonObject root = JsonParser.parseString(responseBody).getAsJsonObject();
+            if (root.get("status").getAsInt() != 0) {
+                logger.debug("getintradayactivity returned non-zero status: {}", responseBody);
+                return Double.NaN;
+            }
+
+            JsonElement bodyEl = root.get("body");
+            if (bodyEl == null || !bodyEl.isJsonObject()) {
+                return Double.NaN;
+            }
+            JsonElement seriesEl = bodyEl.getAsJsonObject().get("series");
+            if (seriesEl == null || !seriesEl.isJsonObject()) {
+                logger.debug("getintradayactivity: no series data in response");
+                return Double.NaN;
+            }
+
+            // series is a map: { "<unix_ts>": { "core_body_temperature": 36.47, ... }, ... }
+            // Find the entry with the highest timestamp that has core_body_temperature
+            JsonObject series = seriesEl.getAsJsonObject();
+            long latestTs = 0;
+            double latestTemp = Double.NaN;
+
+            for (Map.Entry<String, JsonElement> entry : series.entrySet()) {
+                JsonObject dataPoint = entry.getValue().getAsJsonObject();
+                if (!dataPoint.has("core_body_temperature")) {
+                    continue;
+                }
+                long ts = Long.parseLong(entry.getKey());
+                if (ts > latestTs) {
+                    latestTs = ts;
+                    latestTemp = dataPoint.get("core_body_temperature").getAsDouble();
+                }
+            }
+
+            if (!Double.isNaN(latestTemp)) {
+                logger.debug("Intraday body temperature: {}°C at ts={}", latestTemp, latestTs);
+            } else {
+                logger.debug("No core_body_temperature values in intraday data for last 24h");
+            }
+            return latestTemp;
+
+        } catch (Exception e) {
+            logger.error("Error fetching intraday body temperature: {}", e.getMessage(), e);
+            return Double.NaN;
+        }
+    }
+
+    /**
      * Fetches the most recent Afib classification from the Heart v2 - List API.
      * Returns the afib value from the most recent ECG recording:
      * 0 = sinus rhythm, 1 = afib detected, 2 = inconclusive/poor signal
