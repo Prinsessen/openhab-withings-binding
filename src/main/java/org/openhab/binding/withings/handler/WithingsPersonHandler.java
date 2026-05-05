@@ -551,7 +551,7 @@ public class WithingsPersonHandler extends BaseBridgeHandler {
             // Additional sleep metrics
             if (data.sleep_efficiency > 0) {
                 updateState(CHANNEL_GROUP_SLEEP + "#" + CHANNEL_SLEEP_EFFICIENCY,
-                        new DecimalType(data.sleep_efficiency));
+                        new DecimalType(data.sleep_efficiency * 100.0));
             }
             if (data.snoringepisodecount > 0) {
                 updateState(CHANNEL_GROUP_SLEEP + "#" + CHANNEL_SNORING_EPISODES,
