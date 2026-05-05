@@ -4,7 +4,7 @@
 | type | binding |
 | author | Nanna Agesen |
 | version range | \[5.0.0;6.0.0) |
-| download | [org.openhab.binding.withings-5.2.0-SNAPSHOT.jar](https://github.com/Prinsessen/openhab-withings-binding/releases/download/v3.0.0/org.openhab.binding.withings-5.2.0-SNAPSHOT.jar) |
+| download | [org.openhab.binding.withings-5.2.0-SNAPSHOT.jar](https://github.com/Prinsessen/openhab-withings-binding/releases/download/v3.0.1/org.openhab.binding.withings-5.2.0-SNAPSHOT.jar) |
 
 # Withings Health Binding
 
@@ -230,8 +230,8 @@ See the [full changelog](https://github.com/Prinsessen/openhab-withings-binding/
 
 ## Resources
 
-* **Download JAR:** [org.openhab.binding.withings-5.2.0-SNAPSHOT.jar](https://github.com/Prinsessen/openhab-withings-binding/releases/download/v3.0.0/org.openhab.binding.withings-5.2.0-SNAPSHOT.jar)
+* **Download JAR:** [org.openhab.binding.withings-5.2.0-SNAPSHOT.jar](https://github.com/Prinsessen/openhab-withings-binding/releases/download/v3.0.1/org.openhab.binding.withings-5.2.0-SNAPSHOT.jar)
 * **Source Code:** [github.com/Prinsessen/openhab-withings-binding](https://github.com/Prinsessen/openhab-withings-binding)
 * **Full Documentation:** [README.md](https://github.com/Prinsessen/openhab-withings-binding/blob/main/README.md)
-* **Changelog:** [v3.0.0 — ECG Afib, HRV, Skin Temperature](https://github.com/Prinsessen/openhab-withings-binding/releases/tag/v3.0.0)
+* **Changelog:** [v3.0.1 — Sleep Efficiency Fix](https://github.com/Prinsessen/openhab-withings-binding/releases/tag/v3.0.1)
 * **License:** EPL-2.0
