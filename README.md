@@ -486,7 +486,12 @@ log:set DEBUG org.openhab.binding.withings
 
 ## Changelog
 
-### v3.0.0 — May 2026 *(current)*
+### v3.0.1 — May 2026 *(current)*
+
+- **Fix:** `sleep#sleepEfficiency` now correctly reports percentage (0–100) — previously the raw Withings API ratio (0.0–1.0) was sent without conversion
+- **Fix:** Body and skin temperature channel descriptions made more user-friendly
+
+### v3.0.0 — May 2026
 
 - **New:** `cardiovascular#afib` — ECG Afib classification from Heart v2 API (0 = sinus rhythm, 1 = Afib detected, 2 = inconclusive) — ScanWatch 2 / ScanWatch Nova
 - **New:** `sleep#sleepHrvRmssd`, `sleep#sleepHrvSdnn`, `sleep#sleepHrvQuality` — HRV metrics from sleep summary — ScanWatch 2 / ScanWatch Nova
