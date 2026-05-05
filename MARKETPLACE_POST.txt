@@ -203,6 +203,10 @@ DateTime      Withings_Last_Sync      "Last Sync [%1$td-%1$tm-%1$tY]"           
 
 > **Upgrading from v1.x?** See the [migration guide](https://github.com/Prinsessen/openhab-withings-binding/blob/main/README.md#upgrading-from-v1x) in the README. **No re-authorization needed** — existing tokens remain valid. Change `Thing person` → `Bridge person` in your `.things` file and update device channel items to the new `withings:device` UIDs.
 
+## What's New in v3.0.1
+
+* **Fix:** `sleep#sleepEfficiency` now correctly reports percentage (0–100) — previously the raw API ratio (0.0–1.0) was returned without conversion
+
 ## What's New in v3.0.0
 
 | New Channel | Type | Device |
@@ -211,9 +215,9 @@ DateTime      Withings_Last_Sync      "Last Sync [%1$td-%1$tm-%1$tY]"           
 | `sleep#sleepHrvRmssd` | Number | HRV RMSSD during sleep (ms) — ScanWatch 2 |
 | `sleep#sleepHrvSdnn` | Number | HRV SDNN during sleep (ms) — ScanWatch 2 |
 | `sleep#sleepHrvQuality` | Number | HRV quality score — ScanWatch 2 |
-| `body#skinTemperature` | Number:Temperature | Wrist skin temperature from sleep summary (\u00b0C) — ScanWatch 2 |
+| `body#skinTemperature` | Number:Temperature | Wrist skin temperature from sleep summary (°C) — ScanWatch 2 |
 
-See the [full changelog](https://github.com/Prinsessen/openhab-withings-binding/releases/tag/v3.0.0) on GitHub.
+See the [full changelog](https://github.com/Prinsessen/openhab-withings-binding/blob/feature/v3-extended-health-data/README.md#changelog) on GitHub.
 
 ---
 
