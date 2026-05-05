@@ -32,8 +32,14 @@ public class WithingsBindingConstants {
 
     // Thing Types
     public static final ThingTypeUID THING_TYPE_PERSON = new ThingTypeUID(BINDING_ID, "person");
+    public static final ThingTypeUID THING_TYPE_DEVICE = new ThingTypeUID(BINDING_ID, "device");
 
-    public static final Set<ThingTypeUID> SUPPORTED_THING_TYPES = Set.of(THING_TYPE_ACCOUNT, THING_TYPE_PERSON);
+    public static final Set<ThingTypeUID> SUPPORTED_THING_TYPES = Set.of(THING_TYPE_ACCOUNT, THING_TYPE_PERSON,
+            THING_TYPE_DEVICE);
+
+    // Thing Properties
+    public static final String PROPERTY_DEVICE_ID = "deviceId";
+    public static final String PROPERTY_DEVICE_MODEL_NAME = "deviceModelName";
 
     // Channel Group IDs
     public static final String CHANNEL_GROUP_BODY = "body";
@@ -60,7 +66,9 @@ public class WithingsBindingConstants {
     public static final String CHANNEL_VO2_MAX = "vo2Max";
     public static final String CHANNEL_VASCULAR_AGE = "vascularAge";
     public static final String CHANNEL_SPO2 = "spo2";
+    public static final String CHANNEL_AFIB = "afib";
     public static final String CHANNEL_BODY_TEMPERATURE = "temperature";
+    public static final String CHANNEL_SKIN_TEMPERATURE = "skinTemperature";
 
     // Device Channels
     public static final String CHANNEL_DEVICE_BATTERY = "battery";
@@ -111,6 +119,10 @@ public class WithingsBindingConstants {
     public static final String CHANNEL_BREATHING_DISTURBANCES = "breathingDisturbances";
     public static final String CHANNEL_WAKEUP_LATENCY = "wakeupLatency";
     public static final String CHANNEL_SLEEP_LATENCY = "sleepLatency";
+    public static final String CHANNEL_SLEEP_SKIN_TEMPERATURE = "sleepSkinTemperature";
+    public static final String CHANNEL_SLEEP_HRV_RMSSD = "sleepHrvRmssd";
+    public static final String CHANNEL_SLEEP_HRV_SDNN = "sleepHrvSdnn";
+    public static final String CHANNEL_SLEEP_HRV_QUALITY = "sleepHrvQuality";
 
     // OAuth2 Scope
     public static final String OAUTH_SCOPE = "user.metrics,user.activity,user.sleepevents,user.info";
@@ -136,6 +148,7 @@ public class WithingsBindingConstants {
     public static final int MEASURE_TYPE_TEMPERATURE = 12;
     public static final int MEASURE_TYPE_SPO2 = 54;
     public static final int MEASURE_TYPE_BODY_TEMPERATURE = 71;
+    public static final int MEASURE_TYPE_SKIN_TEMPERATURE = 73;
     public static final int MEASURE_TYPE_MUSCLE_MASS = 76;
     public static final int MEASURE_TYPE_HYDRATION = 77;
     public static final int MEASURE_TYPE_BONE_MASS = 88;
@@ -144,5 +157,5 @@ public class WithingsBindingConstants {
     public static final int MEASURE_TYPE_VASCULAR_AGE = 155;
 
     // All measure types we want to fetch
-    public static final String ALL_MEASURE_TYPES = "1,5,6,8,9,10,11,12,54,71,76,77,88,91,123,155";
+    public static final String ALL_MEASURE_TYPES = "1,5,6,8,9,10,11,12,54,71,73,76,77,88,91,123,155";
 }

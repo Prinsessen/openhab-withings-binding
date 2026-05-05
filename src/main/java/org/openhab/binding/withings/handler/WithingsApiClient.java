@@ -25,6 +25,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
@@ -37,6 +38,10 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 /**
  * The {@link WithingsApiClient} handles all communication with the Withings Cloud API.
@@ -162,7 +167,8 @@ public class WithingsApiClient {
         Map<String, String> params = new java.util.HashMap<>();
         params.put("action", "getmeas");
         params.put("meastypes", ALL_MEASURE_TYPES);
-        params.put("category", "1"); // Real measures only
+        // Note: Do not filter by category here — some devices (e.g. ScanWatch 2) report
+        // temperature measurements under a different category and they would be silently excluded.
 
         if (userId > 0) {
             params.put("userid", String.valueOf(userId));
@@ -226,9 +232,10 @@ public class WithingsApiClient {
     }
 
     /**
-     * Fetches sleep summary data.
+     * Fetches sleep summary data for the last 7 days.
+     * Uses a rolling 7-day window so nightly metrics (skin_temperature, HRV) are always available.
      *
-     * @param date the date to fetch sleep for (format: yyyy-MM-dd), or null for today
+     * @param date unused - kept for API compatibility; always fetches last 7 days
      * @return API response or null on error
      */
     public @Nullable WithingsApiResponse getSleepSummary(@Nullable String date) {
@@ -237,32 +244,178 @@ public class WithingsApiClient {
             return null;
         }
 
-        String targetDate = date != null ? date : LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
+        // Use a 7-day rolling window so nightly metrics like skin_temperature are captured
+        LocalDate today = LocalDate.now();
+        LocalDate weekAgo = today.minusDays(6);
 
         Map<String, String> params = new java.util.HashMap<>();
         params.put("action", "getsummary");
-        params.put("startdateymd", targetDate);
-        params.put("enddateymd", targetDate);
+        params.put("startdateymd", weekAgo.format(DateTimeFormatter.ISO_LOCAL_DATE));
+        params.put("enddateymd", today.format(DateTimeFormatter.ISO_LOCAL_DATE));
         params.put("data_fields",
                 "total_sleep_time,total_timeinbed,deepsleepduration,lightsleepduration,remsleepduration,"
                         + "wakeupduration,wakeupcount,durationtosleep,durationtowakeup,sleep_score,snoring,"
                         + "snoringepisodecount,nb_rem_episodes,night_events,out_of_bed_count,"
                         + "hr_average,hr_min,hr_max,rr_average,rr_min,rr_max,sleep_efficiency,"
-                        + "sleep_latency,wakeup_latency,breathing_disturbances_intensity");
+                        + "sleep_latency,wakeup_latency,breathing_disturbances_intensity,"
+                        + "skin_temperature,rmssd,sdnn_1,hrv_quality");
+
+        logger.debug(
+                "getSleepSummary: querying {} to {} with data_fields: skin_temperature,rmssd,sdnn_1,hrv_quality,...",
+                weekAgo, today);
 
         try {
             String responseBody = postForm(API_SLEEP_V2_URL, params, true);
+            logger.debug("getSleepSummary raw response: {}", responseBody);
             WithingsApiResponse response = gson.fromJson(responseBody, WithingsApiResponse.class);
 
             if (response == null || response.status != 0) {
                 int status = response != null ? response.status : -1;
-                logger.debug("getSleepSummary returned status: {} (may require user.activity scope)", status);
+                logger.warn("getSleepSummary returned status {} — full response: {}", status, responseBody);
                 return null;
             }
+            int seriesCount = (response.body != null && response.body.series != null) ? response.body.series.size() : 0;
+            logger.debug("getSleepSummary OK: {} series entries", seriesCount);
             return response;
         } catch (Exception e) {
             logger.error("Error fetching sleep summary: {}", e.getMessage(), e);
             return null;
+        }
+    }
+
+    /**
+     * Fetches the most recent body (core) temperature from the intraday activity API.
+     * The getmeas API does NOT return body temperature for ScanWatch 2 — only the
+     * getintradayactivity endpoint with data_fields=core_body_temperature works.
+     *
+     * Response format: {"status":0,"body":{"series":{"<unix_ts>":{"core_body_temperature":36.47,...}}}}
+     *
+     * @return most recent core body temperature in °C, or Double.NaN if unavailable
+     */
+    public double getIntradayBodyTemperature() {
+        if (!ensureValidToken()) {
+            logger.warn("Cannot fetch intraday body temperature - no valid token");
+            return Double.NaN;
+        }
+
+        // Request last 24 hours — intraday data is stored per-measurement
+        long endTs = Instant.now().getEpochSecond();
+        long startTs = endTs - (24L * 3600);
+
+        Map<String, String> params = new HashMap<>();
+        params.put("action", "getintradayactivity");
+        params.put("startdate", String.valueOf(startTs));
+        params.put("enddate", String.valueOf(endTs));
+        params.put("data_fields", "core_body_temperature");
+
+        try {
+            String responseBody = postForm(API_MEASURE_V2_URL, params, true);
+            logger.debug("getIntradayBodyTemperature response: {}", responseBody);
+
+            JsonObject root = JsonParser.parseString(responseBody).getAsJsonObject();
+            if (root.get("status").getAsInt() != 0) {
+                logger.debug("getintradayactivity returned non-zero status: {}", responseBody);
+                return Double.NaN;
+            }
+
+            JsonElement bodyEl = root.get("body");
+            if (bodyEl == null || !bodyEl.isJsonObject()) {
+                return Double.NaN;
+            }
+            JsonElement seriesEl = bodyEl.getAsJsonObject().get("series");
+            if (seriesEl == null || !seriesEl.isJsonObject()) {
+                logger.debug("getintradayactivity: no series data in response");
+                return Double.NaN;
+            }
+
+            // series is a map: { "<unix_ts>": { "core_body_temperature": 36.47, ... }, ... }
+            // Find the entry with the highest timestamp that has core_body_temperature
+            JsonObject series = seriesEl.getAsJsonObject();
+            long latestTs = 0;
+            double latestTemp = Double.NaN;
+
+            for (Map.Entry<String, JsonElement> entry : series.entrySet()) {
+                JsonObject dataPoint = entry.getValue().getAsJsonObject();
+                if (!dataPoint.has("core_body_temperature")) {
+                    continue;
+                }
+                long ts = Long.parseLong(entry.getKey());
+                if (ts > latestTs) {
+                    latestTs = ts;
+                    latestTemp = dataPoint.get("core_body_temperature").getAsDouble();
+                }
+            }
+
+            if (!Double.isNaN(latestTemp)) {
+                logger.debug("Intraday body temperature: {}°C at ts={}", latestTemp, latestTs);
+            } else {
+                logger.debug("No core_body_temperature values in intraday data for last 24h");
+            }
+            return latestTemp;
+
+        } catch (Exception e) {
+            logger.error("Error fetching intraday body temperature: {}", e.getMessage(), e);
+            return Double.NaN;
+        }
+    }
+
+    /**
+     * Fetches the most recent Afib classification from the Heart v2 - List API.
+     * Returns the afib value from the most recent ECG recording:
+     * 0 = sinus rhythm, 1 = afib detected, 2 = inconclusive/poor signal
+     *
+     * @return afib classification (0/1/2), or -1 if no ECG data available
+     */
+    public int getLatestAfib() {
+        if (!ensureValidToken()) {
+            logger.warn("Cannot fetch heart data - no valid token");
+            return -1;
+        }
+
+        // Query last 30 days — ECG recordings are infrequent
+        long endTs = Instant.now().getEpochSecond();
+        long startTs = endTs - (30L * 24 * 3600);
+
+        Map<String, String> params = new HashMap<>();
+        params.put("action", "list");
+        params.put("startdate", String.valueOf(startTs));
+        params.put("enddate", String.valueOf(endTs));
+
+        try {
+            String responseBody = postForm(API_HEART_V2_URL, params, true);
+            logger.trace("Withings heart list response: {}", responseBody);
+            JsonObject root = JsonParser.parseString(responseBody).getAsJsonObject();
+            if (root.get("status").getAsInt() != 0) {
+                logger.debug("Heart v2 list returned non-zero status: {}", responseBody);
+                return -1;
+            }
+            JsonElement bodyEl = root.get("body");
+            if (bodyEl == null || !bodyEl.isJsonObject()) {
+                return -1;
+            }
+            JsonElement seriesEl = bodyEl.getAsJsonObject().get("series");
+            if (seriesEl == null || !seriesEl.isJsonArray()) {
+                return -1;
+            }
+            JsonArray series = seriesEl.getAsJsonArray();
+            int latestAfib = -1;
+            long latestTs = 0;
+            for (JsonElement el : series) {
+                JsonObject entry = el.getAsJsonObject();
+                long ts = entry.has("timestamp") ? entry.get("timestamp").getAsLong() : 0;
+                JsonObject ecg = entry.has("ecg") ? entry.getAsJsonObject("ecg") : null;
+                if (ecg != null && ecg.has("afib") && ts > latestTs) {
+                    latestTs = ts;
+                    latestAfib = ecg.get("afib").getAsInt();
+                }
+            }
+            if (latestTs > 0) {
+                logger.debug("Heart v2 latest ECG afib={} at ts={}", latestAfib, latestTs);
+            }
+            return latestAfib;
+        } catch (Exception e) {
+            logger.debug("Error fetching heart ECG data: {}", e.getMessage());
+            return -1;
         }
     }
 

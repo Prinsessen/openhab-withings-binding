@@ -122,7 +122,7 @@
 	<!-- ==================== Channel Group: Body Measurements ==================== -->
 	<channel-group-type id="body-measurements">
 		<label>Body Measurements</label>
-		<description>Body composition data from Withings scales</description>
+		<description>Body composition and temperature data from Withings scales and watches</description>
 		<channels>
 			<channel id="weight" typeId="weight"/>
 			<channel id="fatRatio" typeId="fat-ratio"/>
@@ -132,6 +132,8 @@
 			<channel id="hydration" typeId="hydration"/>
 			<channel id="boneMass" typeId="bone-mass"/>
 			<channel id="lastMeasurement" typeId="last-measurement"/>
+			<channel id="temperature" typeId="body-temperature"/>
+			<channel id="skinTemperature" typeId="skin-temperature"/>
 		</channels>
 	</channel-group-type>
 
@@ -147,7 +149,7 @@
 			<channel id="vo2Max" typeId="vo2-max"/>
 			<channel id="vascularAge" typeId="vascular-age"/>
 			<channel id="spo2" typeId="spo2"/>
-			<channel id="temperature" typeId="body-temperature"/>
+			<channel id="afib" typeId="afib"/>
 		</channels>
 	</channel-group-type>
 
@@ -205,6 +207,10 @@
 			<channel id="breathingDisturbances" typeId="breathing-disturbances"/>
 			<channel id="wakeupLatency" typeId="wakeup-latency"/>
 			<channel id="sleepLatency" typeId="sleep-latency"/>
+			<channel id="sleepSkinTemperature" typeId="sleep-skin-temperature"/>
+			<channel id="sleepHrvRmssd" typeId="sleep-hrv-rmssd"/>
+			<channel id="sleepHrvSdnn" typeId="sleep-hrv-sdnn"/>
+			<channel id="sleepHrvQuality" typeId="sleep-hrv-quality"/>
 		</channels>
 	</channel-group-type>
 
@@ -218,7 +224,6 @@
 			<channel id="model" typeId="device-model"/>
 		</channels>
 	</channel-group-type>
-
 	<!-- ==================== Channel Types: Body ==================== -->
 	<channel-type id="weight">
 		<item-type>Number:Mass</item-type>
@@ -276,6 +281,13 @@
 		<state readOnly="true"/>
 	</channel-type>
 
+	<channel-type id="body-temperature">
+		<item-type>Number:Temperature</item-type>
+		<label>Body Temperature</label>
+		<description>Body temperature measured by ScanWatch Reflect</description>
+		<state readOnly="true" pattern="%.1f %unit%"/>
+	</channel-type>
+
 	<!-- ==================== Channel Types: Cardiovascular ==================== -->
 	<channel-type id="heart-pulse">
 		<item-type>Number</item-type>
@@ -326,10 +338,17 @@
 		<state readOnly="true" pattern="%.1f %%"/>
 	</channel-type>
 
-	<channel-type id="body-temperature">
+	<channel-type id="afib">
+		<item-type>Number</item-type>
+		<label>Afib Classification</label>
+		<description>ECG Afib classification from ScanWatch: 0=sinus rhythm, 1=afib detected, 2=inconclusive</description>
+		<state readOnly="true" pattern="%d"/>
+	</channel-type>
+
+	<channel-type id="skin-temperature">
 		<item-type>Number:Temperature</item-type>
-		<label>Body Temperature</label>
-		<description>Body temperature measurement</description>
+		<label>Skin Temperature</label>
+		<description>Wrist skin temperature measured at the wrist by ScanWatch 2</description>
 		<state readOnly="true" pattern="%.1f %unit%"/>
 	</channel-type>
 
@@ -622,6 +641,34 @@
 		<label>Sleep Latency</label>
 		<description>Time taken to fall asleep after going to bed</description>
 		<state readOnly="true" pattern="%.0f %unit%"/>
+	</channel-type>
+
+	<channel-type id="sleep-skin-temperature">
+		<item-type>Number:Temperature</item-type>
+		<label>Sleep Skin Temperature</label>
+		<description>Wrist skin temperature measured during sleep (ScanWatch 2)</description>
+		<state readOnly="true" pattern="%.1f %unit%"/>
+	</channel-type>
+
+	<channel-type id="sleep-hrv-rmssd">
+		<item-type>Number</item-type>
+		<label>HRV RMSSD</label>
+		<description>Heart rate variability - root mean square of successive differences (ms)</description>
+		<state readOnly="true" pattern="%.1f ms"/>
+	</channel-type>
+
+	<channel-type id="sleep-hrv-sdnn">
+		<item-type>Number</item-type>
+		<label>HRV SDNN</label>
+		<description>Heart rate variability - standard deviation of NN intervals over 1 min (ms)</description>
+		<state readOnly="true" pattern="%.1f ms"/>
+	</channel-type>
+
+	<channel-type id="sleep-hrv-quality">
+		<item-type>Number</item-type>
+		<label>HRV Quality</label>
+		<description>Heart rate variability measurement quality score</description>
+		<state readOnly="true" pattern="%d"/>
 	</channel-type>
 
 	<!-- ==================== Channel Types: Device ==================== -->
