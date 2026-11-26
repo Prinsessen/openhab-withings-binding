@@ -80,7 +80,16 @@ Skin temperature is now retrieved from the sleep summary API (7-day rolling wind
 
 ## Requirements
 
-- openHAB 4.x or 5.x
+- openHAB 4.x or 5.x up to 5.2 for v3.0.x; **openHAB 5.3** needs v4.0.x (see below)
+
+### Which version for which openHAB
+
+| openHAB | binding | branch |
+|---|---|---|
+| 5.3 and its snapshots/milestones | 4.0.x | `openhab-5.3` |
+| 5.0 - 5.2 | 3.0.x | `main` |
+
+openHAB 5.3 moved to Jetty 12 / Jakarta EE 10 and removed the HttpService the authorization page was registered with; a binding built for one does not start on the other.
 - A [Withings developer account](https://developer.withings.com/) with a registered application
 - At least one Withings health device linked to your Withings account
 - Network access to `wbsapi.withings.net`
