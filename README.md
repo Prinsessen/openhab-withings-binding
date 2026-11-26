@@ -495,7 +495,12 @@ log:set DEBUG org.openhab.binding.withings
 
 ## Changelog
 
-### v3.0.1 — May 2026 *(current)*
+### v4.0.0-beta.1 — November 2026 *(for openHAB 5.3)*
+
+- **Changed:** openHAB 5.3 moved to Jetty 12 / Jakarta EE 10 and removed the OSGi `HttpService`, so v3.0.1 does not start there. The authorization page (`/withings`) is now a `jakarta.servlet` servlet published to the OSGi servlet whiteboard. Same features as v3.0.1.
+- **New:** `WithingsServletTest` - the bridges page, the redirect to Withings, an unknown callback and a bad POST; the same assertions pass on v3.0.1 and here. Not yet run on a live openHAB 5.3.
+
+### v3.0.1 — May 2026 *(current for openHAB 5.0 - 5.2)*
 
 - **Fix:** `sleep#sleepEfficiency` now correctly reports percentage (0–100) — previously the raw Withings API ratio (0.0–1.0) was sent without conversion
 - **Fix:** Body and skin temperature channel descriptions made more user-friendly

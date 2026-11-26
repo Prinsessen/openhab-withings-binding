@@ -19,9 +19,6 @@ import static org.mockito.Mockito.*;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,7 +27,9 @@ import org.openhab.binding.withings.handler.WithingsAccountHandler;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.thing.ThingUID;
-import org.osgi.service.http.HttpService;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * The authorization servlet's answers, with mocked requests: the bridges page, the redirect to Withings with
@@ -49,9 +48,9 @@ class WithingsServletTest {
     private HttpServletResponse response = mock(HttpServletResponse.class);
     private StringWriter body = new StringWriter();
 
-    /** openHAB 5.2: registered through the HttpService. */
+    /** openHAB 5.3: published to the servlet whiteboard by its component properties, no HttpService. */
     private static WithingsServlet newServlet() {
-        return new WithingsServlet(mock(HttpService.class));
+        return new WithingsServlet();
     }
 
     @BeforeEach
